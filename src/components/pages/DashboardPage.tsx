@@ -1,18 +1,23 @@
-import React from 'react';
-import Sidebar from '../organisms/Sidebar';
-import Navbar from '../organisms/Navbar';
-import Table from '../organisms/Table';
+// src/components/pages/DashboardPage.tsx
+import React from "react";
+import Sidebar from "../organisms/Sidebar";
+import Navbar from "../organisms/Navbar";
+import Table from "../organisms/Table";
 
 const DashboardPage: React.FC = () => {
   return (
-    <div className="flex bg-[#FAFBFC] min-h-screen">
+    <div className="flex h-screen">
       {/* Sidebar */}
       <Sidebar />
 
-      {/* Contenido principal */}
-      <div className="flex-1">
+      {/* Main content */}
+      <div className="flex flex-col flex-1">
+        {/* Navbar */}
         <Navbar />
-        <div className="p-8">
+
+        {/* Page content */}
+        <div className="p-6 ">
+          <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
           <Table />
         </div>
       </div>
