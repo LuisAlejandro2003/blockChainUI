@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaSearch, FaCaretDown } from 'react-icons/fa';
+import { FaSearch, FaCopy } from 'react-icons/fa';
 
 const Navbar: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -11,12 +11,12 @@ const Navbar: React.FC = () => {
   return (
     <div className="w-full bg-white p-4 flex items-center">
       {/* Título del Panel */}
-      <h1
+      {/*  <h1
         className="text-3xl font-semibold text-gray-800 ml-8"
         style={{ fontFamily: 'Poppins, sans-serif' }}
       >
         Panel
-      </h1>
+      </h1>*/}
 
       {/* Barra de Búsqueda centrada */}
       <div className="relative mx-auto w-1/3">
@@ -34,19 +34,11 @@ const Navbar: React.FC = () => {
           className="flex items-center cursor-pointer text-gray-800 font-medium"
           onClick={toggleDropdown}
         >
-          <span className="mr-2">Alejandro</span>
-          <FaCaretDown />
+          <span className="mr-2">Llave publica</span>
+          <FaCopy />
         </div>
 
-        {/* Dropdown */}
-        {isDropdownOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 border">
 
-            <a href="#" className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
-              Cerrar sesión
-            </a>
-          </div>
-        )}
       </div>
     </div>
   );

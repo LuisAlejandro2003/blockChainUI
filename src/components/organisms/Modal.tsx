@@ -1,5 +1,6 @@
 import React from "react";
 import Button from "../atoms/Button";
+import { updatePagareOwner } from "../services/apiService";
 
 interface ModalProps {
   isOpen: boolean;
@@ -53,6 +54,15 @@ const Modal: React.FC<ModalProps> = ({
   const handleOutsideClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
+    }
+  };
+
+  const handleConfirmEndoso = async () => {
+    try {
+      await updatePagareOwner(data.txId, fondeador);
+      onClose();
+    } catch (error) {
+      console.error("Error al actualizar el propietario del pagaré:", error);
     }
   };
 
@@ -129,7 +139,10 @@ const Modal: React.FC<ModalProps> = ({
 
         {/* Modal Footer */}
         <div className="mt-6">
-          <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 text-sm">
+          <Button
+            className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 text-sm"
+            onClick={handleConfirmEndoso}
+          >
             Confirmar endoso
           </Button>
         </div>

@@ -8,7 +8,7 @@ const Table: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false); 
   const [selectedDetail, setSelectedDetail] = useState<any>(null); 
   const [, setIsLoadingDetails] = useState(false); 
-  const [error, setError] = useState<string | null>(null); 
+  const [, setError] = useState<string | null>(null); 
   const [fondeador, setFondeador] = useState("Ninguno"); 
 
   // Obtener todos los pagarés
@@ -51,7 +51,7 @@ const Table: React.FC = () => {
 
   return (
     <div className="w-full px-10">
-      {error && <p className="text-red-500 mb-4">{error}</p>}
+     
       <table className="w-full bg-white rounded-lg shadow-md">
         <thead>
           <tr className="bg-gray-100 text-gray-700">
