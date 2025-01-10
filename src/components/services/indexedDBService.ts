@@ -1,4 +1,3 @@
-// src/components/services/indexedDBService.ts
 const DB_NAME = 'secureDB';
 const STORE_NAME = 'encryptedStore';
 
@@ -20,23 +19,17 @@ export const initDB = (): Promise<IDBDatabase> => {
   });
 };
 
-// Guardar datos encriptados en IndexedDB
-export const saveEncryptedData = async (
-  key: string,
-  value: { [key: string]: any }
-) => {
+// Guardar datos en IndexedDB
+export const saveDataToDB = async (key: string, value: any) => {
   const db = await initDB();
-  const tx = db.transaction(STORE_NAME, "readwrite");
+  const tx = db.transaction(STORE_NAME, 'readwrite');
   const store = tx.objectStore(STORE_NAME);
   await store.put(value, key);
   console.log(`Datos guardados con la clave '${key}'.`);
 };
 
-
-// Recuperar datos encriptados de IndexedDB
-export const getEncryptedData = async (
-  key: string
-): Promise<{ encryptedData: ArrayBuffer; iv: Uint8Array } | undefined> => {
+// Recuperar datos de IndexedDB
+export const getDataFromDB = async (key: string): Promise<any> => {
   const db = await initDB();
   const tx = db.transaction(STORE_NAME, 'readonly');
   const store = tx.objectStore(STORE_NAME);
