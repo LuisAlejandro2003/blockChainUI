@@ -1,6 +1,6 @@
 import axios from "axios";
 import { showErrorModal } from "../atoms/ErrorModal";
-import { getDataFromDB, saveDataToDB } from "./indexedDBService";
+import { saveDataToDB } from "./indexedDBService";
 import CryptoJS from "crypto-js";
 import { ec as EC } from "elliptic";
 import { createHash, createCipheriv } from "crypto-browserify";

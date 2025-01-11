@@ -1,39 +1,87 @@
-import React from "react";
-import {
-  FaSignOutAlt,
-  FaFileInvoice,
-  FaExchangeAlt,
-} from "react-icons/fa";
-import logo from "../../assets/images/logo.png";
+import React from 'react';
+import { FileText, Repeat2, LogOut, Plus } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+interface SidebarItemProps {
+  icon: React.ReactNode;
+  text: string;
+  isActive?: boolean;
+  onClick?: () => void;
+}
+
+const SidebarItem: React.FC<SidebarItemProps> = ({ icon, text, isActive, onClick }) => {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
+        ${isActive 
+          ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/20' 
+          : 'text-gray-600 hover:bg-gray-100'
+        }
+        group font-medium text-sm
+      `}
+    >
+      <div className={`
+        ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-yellow-500'}
+        transition-colors duration-200
+      `}>
+        {icon}
+      </div>
+      <span>{text}</span>
+    </button>
+  );
+};
 
 const Sidebar: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname;
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
+
   return (
-    <div className="h-screen p-6 bg-white flex flex-col items-start">
+    <div className="h-screen bg-white border-r border-gray-200 flex flex-col w-64 py-6 px-4">
       {/* Logo */}
-      <div className="mb-8">
-        <img src={logo} alt="Logo" className="h-20" />
+      <div className="px-2 mb-8">
+        <img 
+          src="src\assets\images\logo.png" 
+          alt="Logo" 
+          className="h-12 w-auto"
+        />
       </div>
 
-      {/* Botón Ver Pagarés */}
-      <div className="w-full mb-6">
-        <div className="flex items-center p-3 bg-[#FFC565] text-white rounded-lg cursor-pointer w-full">
-          <FaFileInvoice className="mr-2" />
-          <span>Ver pagarés</span>
-        </div>
-      </div>
+      {/* Navigation */}
+      <nav className="flex-1 space-y-2">
+        <SidebarItem
+          icon={<FileText size={20} />}
+          text="Ver pagarés"
+          isActive={currentPath === '/dashboard'}
+          onClick={() => handleNavigation('/dashboard')}
+        />
+        <SidebarItem
+          icon={<Plus size={20} />}
+          text="Crear pagaré"
+          isActive={currentPath === '/add-credit-agreement'}
+          onClick={() => handleNavigation('/add-credit-agreement')}
+        />
+     {/*<SidebarItem
+          icon={<Repeat2 size={20} />}
+          text="Endosar"
+          isActive={currentPath === '/endose'}
+          onClick={() => handleNavigation('/endose')}
+        /> */}
+      </nav>
 
-      {/* Elementos del Sidebar */}
-      <div className="w-full mb-4">
-        <div className="flex items-center text-gray-800 p-3 hover:bg-gray-100 rounded-lg w-full cursor-pointer">
-          <FaExchangeAlt className="mr-2" />
-          <span style={{ fontFamily: "Poppins, sans-serif" }}>Endosar</span>
-        </div>
-      </div>
-      <div className="w-full">
-        <div className="flex items-center text-gray-800 p-3 hover:bg-gray-100 rounded-lg w-full cursor-pointer">
-          <FaSignOutAlt className="mr-2" />
-          <span style={{ fontFamily: "Poppins, sans-serif" }}>Salir</span>
-        </div>
+      {/* Footer */}
+      <div className="pt-6 mt-6 border-t border-gray-200">
+        <SidebarItem
+          icon={<LogOut size={20} />}
+          text="Cerrar sesión"
+          onClick={() => console.log('Logout clicked')}
+        />
       </div>
     </div>
   );

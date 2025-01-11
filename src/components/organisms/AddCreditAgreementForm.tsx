@@ -1,20 +1,10 @@
 import React from 'react';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
-import {
-  Box,
-  Button,
-  Grid,
-  TextField,
-  Typography,
-  Container,
-  Divider,
-  CircularProgress,
-} from '@mui/material';
+import { Loader2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { createPagare } from '../services/apiService';
 
-// Esquema de validación
 const validationSchema = yup.object({
   id: yup
     .string()
@@ -105,134 +95,180 @@ const AddCreditAgreementForm: React.FC = () => {
     },
   });
 
+  const inputClasses = `
+    w-full px-4 py-2.5 rounded-lg border border-gray-300
+    focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500
+    bg-white text-gray-900 transition-colors duration-200
+  `;
+
+  const errorClasses = "mt-1 text-sm text-red-600";
+
   return (
-    <Container maxWidth="md" sx={{ mt: 5 }}>
-      <Box
-        component="form"
-        onSubmit={formik.handleSubmit}
-        sx={{
-          p: 4,
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-        }}
-      >
-        <Typography variant="h5" align="center" sx={{ fontWeight: 600, mb: 3, color: '#0E4A67' }}>
-          Agregar Pagaré
-        </Typography>
-        <Divider sx={{ mb: 3 }} />
-        <Grid container spacing={3}>
-          {/* Input de ID y Owner */}
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              id="id"
-              name="id"
-              label="ID del Pagaré"
-              value={formik.values.id}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              error={formik.touched.id && Boolean(formik.errors.id)}
-              helperText={formik.touched.id && formik.errors.id}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              id="Owner"
-              name="Owner"
-              label="Propietario"
-              value={formik.values.Owner}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              error={formik.touched.Owner && Boolean(formik.errors.Owner)}
-              helperText={formik.touched.Owner && formik.errors.Owner}
-            />
-          </Grid>
-          {/* Otros inputs */}
-          {[{ name: 'Montocredito', label: 'Monto del crédito' },
-            { name: 'Plazo', label: 'Plazo en meses' },
-            { name: 'PorInteres', label: 'Tasa de interés (%)' },
-            { name: 'PordeMoratorios', label: 'Tasa moratoria (%)' },
-            { name: 'LugarCreacion', label: 'Lugar de creación' },
-            { name: 'Desembolso', label: 'Monto del desembolso' },
-            { name: 'NumeroCliente', label: 'Número del cliente' },
-            { name: 'CodigoCliente', label: 'Código del cliente' },
-            { name: 'HashDocumento', label: 'Hash del documento' },
-          ].map((field, index) => (
-          <Grid item xs={12} sm={6} key={index}>
-            <TextField
-             fullWidth
-          id={field.name}
-          name={field.name}
-          label={field.label}
-          value={(formik.values as any)[field.name]}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          error={
-            formik.touched[field.name as keyof typeof formik.touched] &&
-            Boolean(formik.errors[field.name as keyof typeof formik.errors])
-          }
-         helperText={
-         formik.touched[field.name as keyof typeof formik.touched] &&
-         formik.errors[field.name as keyof typeof formik.errors]
-            }
-          />
-          </Grid>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        <form 
+          onSubmit={formik.handleSubmit}
+          className="bg-white rounded-2xl shadow-xl p-8"
+        >
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Agregar Pagaré
+            </h1>
+            <p className="mt-2 text-gray-600">
+              Complete todos los campos requeridos para crear un nuevo pagaré
+            </p>
+          </div>
 
-          ))}
-          {/* Fechas */}
-          {[{ name: 'FechaPrimerPago', label: 'Fecha del primer pago' },
-            { name: 'Fecha', label: 'Fecha de creación' },
-            { name: 'FechaVencimiento', label: 'Fecha de vencimiento' },
-          ].map((field, index) => (
-            <Grid item xs={12} sm={6} key={index}>
-              <TextField
-                fullWidth
-                id={field.name}
-                name={field.name}
-                label={field.label}
-                type="date"
-                value={(formik.values as any)[field.name]}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-              />
-            </Grid>
-          ))}
-        </Grid>
-        
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4, gap: 2 }}>
-  <Button
-    type="button"
-    variant="outlined"
-    sx={{
-      color: '#FF6600',
-      borderColor: '#FF6600',
-      '&:hover': { backgroundColor: '#FF6600', color: 'white' },
-    }}
-    onClick={() => formik.resetForm()}
-  >
-    Cancelar
-  </Button>
-  <Button
-    type="submit"
-    variant="contained"
-    disabled={loading}
-    sx={{
-      backgroundColor: '#FF6600',
-      color: 'white',
-      '&:hover': { backgroundColor: '#E55A00' },
-    }}
-  >
-    {loading ? <CircularProgress size={24} color="inherit" /> : 'Guardar'}
-  </Button>
-</Box>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* ID y Owner - Full width */}
+            <div className="md:col-span-2 space-y-6">
+              <div>
+                <label htmlFor="id" className="block text-sm font-medium text-gray-700 mb-1">
+                  ID del Pagaré
+                </label>
+                <input
+                  id="id"
+                  name="id"
+                  type="text"
+                  className={inputClasses}
+                  value={formik.values.id}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+                {formik.touched.id && formik.errors.id && (
+                  <div className={errorClasses}>{formik.errors.id}</div>
+                )}
+              </div>
 
-      </Box>
-    </Container>
+              <div>
+                <label htmlFor="Owner" className="block text-sm font-medium text-gray-700 mb-1">
+                  Propietario
+                </label>
+                <input
+                  id="Owner"
+                  name="Owner"
+                  type="text"
+                  className={inputClasses}
+                  value={formik.values.Owner}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+                {formik.touched.Owner && formik.errors.Owner && (
+                  <div className={errorClasses}>{formik.errors.Owner}</div>
+                )}
+              </div>
+            </div>
+
+            {/* Campos numéricos */}
+            {[
+              { name: 'Montocredito', label: 'Monto del crédito' },
+              { name: 'Plazo', label: 'Plazo en meses' },
+              { name: 'PorInteres', label: 'Tasa de interés (%)' },
+              { name: 'PordeMoratorios', label: 'Tasa moratoria (%)' },
+              { name: 'Desembolso', label: 'Monto del desembolso' },
+            ].map((field) => (
+              <div key={field.name}>
+                <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-1">
+                  {field.label}
+                </label>
+                <input
+                  id={field.name}
+                  name={field.name}
+                  type="number"
+                  className={inputClasses}
+                  value={formik.values[field.name as keyof typeof formik.values]}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+                {formik.touched[field.name as keyof typeof formik.touched] && 
+                 formik.errors[field.name as keyof typeof formik.errors] && (
+                  <div className={errorClasses}>
+                    {formik.errors[field.name as keyof typeof formik.errors]?.toString()}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Campos de texto */}
+            {[
+              { name: 'LugarCreacion', label: 'Lugar de creación' },
+              { name: 'NumeroCliente', label: 'Número del cliente' },
+              { name: 'CodigoCliente', label: 'Código del cliente' },
+              { name: 'HashDocumento', label: 'Hash del documento' },
+            ].map((field) => (
+              <div key={field.name}>
+                <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-1">
+                  {field.label}
+                </label>
+                <input
+                  id={field.name}
+                  name={field.name}
+                  type="text"
+                  className={inputClasses}
+                  value={formik.values[field.name as keyof typeof formik.values]}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+                {formik.touched[field.name as keyof typeof formik.touched] && 
+                 formik.errors[field.name as keyof typeof formik.errors] && (
+                  <div className={errorClasses}>
+                    {formik.errors[field.name as keyof typeof formik.errors]?.toString()}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Fechas */}
+            {[
+              { name: 'FechaPrimerPago', label: 'Fecha del primer pago' },
+              { name: 'Fecha', label: 'Fecha de creación' },
+              { name: 'FechaVencimiento', label: 'Fecha de vencimiento' },
+            ].map((field) => (
+              <div key={field.name}>
+                <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-1">
+                  {field.label}
+                </label>
+                <input
+                  id={field.name}
+                  name={field.name}
+                  type="date"
+                  className={inputClasses}
+                  value={formik.values[field.name as keyof typeof formik.values]}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Botones de acción */}
+          <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end gap-4">
+            <button
+              type="button"
+              onClick={() => formik.resetForm()}
+              className="px-6 py-2.5 rounded-lg text-yellow-600 border border-yellow-600
+                hover:bg-yellow-50 transition-colors duration-200 font-medium"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-2.5 rounded-lg bg-yellow-500 text-white font-medium
+                hover:bg-yellow-600 transition-colors duration-200 disabled:opacity-50
+                disabled:cursor-not-allowed flex items-center justify-center min-w-[120px]"
+            >
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                'Guardar'
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 };
 
