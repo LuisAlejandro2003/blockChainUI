@@ -33,12 +33,13 @@ interface PagareData {
   Estatus: string;
 }
 
-export const generateEncryptedData = () => {
+export const generateEncryptedData = (messageObject: any) => {
   try {
     console.log("Valores iniciales en generateEncryptedData:");
     console.log("HARDCODED_PRIVATE_KEY:", HARDCODED_PRIVATE_KEY);
     console.log("HARDCODED_PASSWORD:", HARDCODED_PASSWORD);
     console.log("SERVER_KEY_PUBLIC:", SERVER_KEY_PUBLIC);
+    console.log("Mensaje a encriptar:", messageObject);
 
     const passwordHash = createHash("sha256").update(HARDCODED_PASSWORD).digest("hex");
     const privateKeyC = CryptoJS.AES.decrypt(HARDCODED_PRIVATE_KEY, passwordHash).toString(CryptoJS.enc.Utf8);
@@ -56,25 +57,8 @@ export const generateEncryptedData = () => {
 
     const keyPair = e.keyFromPrivate(privateKeyC, "hex");
 
-    const jsonString = JSON.stringify({
-      id: "PG10",
-      obj: {
-        Montocredito: "0",
-        Plazo: "0",
-        FechaPrimerPago: "0",
-        PorInteres: "0",
-        PordeMoratorios: "0",
-        LugarCreacion: "0",
-        Desembolso: "0",
-        Fecha: "0",
-        NumeroCliente: "0",
-        CodigoCliente: "0",
-        FechaVencimiento: "0",
-        HashDocumento: "0",
-        Owner: "0",
-        Estatus: "0",
-      },
-    });
+    // Convertir el objeto a string JSON
+    const jsonString = JSON.stringify(messageObject);
 
     const hash = createHash("sha256").update(jsonString).digest("hex");
     const signature = keyPair.sign(hash, "hex");
@@ -98,7 +82,7 @@ export const generateEncryptedData = () => {
 // Servicio para obtener todos los pagarés
 export const fetchAllPagares = async (): Promise<any> => {
   try {
-    const encryptedData = generateEncryptedData();
+    const encryptedData = generateEncryptedData({});
 
     console.log("Valores generados por generateEncryptedData:");
     console.log("Ciphers:", encryptedData.ciphers);
@@ -133,7 +117,7 @@ export const fetchAllPagares = async (): Promise<any> => {
 // Servicio para obtener los detalles de un pagaré por ID
 export const fetchPagareDetails = async (id: string) => {
   try {
-    const encryptedData = generateEncryptedData();
+    const encryptedData = generateEncryptedData({ id });
     console.log("Datos encriptados generados:", encryptedData);
 
     const response = await axios.post(
@@ -144,7 +128,14 @@ export const fetchPagareDetails = async (id: string) => {
       }
     );
 
-    return response.data.response;
+    console.log("Respuesta de gethistoryone:", response.data);
+
+    // Asumiendo que response.data es un array con un solo elemento
+    if (Array.isArray(response.data) && response.data.length > 0) {
+      return response.data[0];
+    }
+
+    return response.data;
   } catch (error: any) {
     console.error("Error en fetchPagareDetails:", error);
     const errorMessage = error.response?.data?.response?.message || 
@@ -158,7 +149,7 @@ export const fetchPagareDetails = async (id: string) => {
 // Servicio para actualizar el propietario de un pagaré
 export const updatePagareOwner = async (id: string, newOwner: string) => {
   try {
-    const encryptedData = generateEncryptedData();
+    const encryptedData = generateEncryptedData({ id, new: newOwner });
     const response = await axios.post(
       `${API_URL}/updateoneowner`,
       encryptedData,
@@ -181,7 +172,33 @@ export const updatePagareOwner = async (id: string, newOwner: string) => {
 // Servicio para crear un nuevo pagaré
 export const createPagare = async (id: string, obj: PagareData) => {
   try {
-    const encryptedData = generateEncryptedData();
+    // Asegurarnos de que todos los campos sean strings
+    const formattedObj = {
+      Montocredito: String(obj.Montocredito),
+      Plazo: String(obj.Plazo),
+      FechaPrimerPago: String(obj.FechaPrimerPago || "0"),
+      PorInteres: String(obj.PorInteres),
+      PordeMoratorios: String(obj.PordeMoratorios),
+      LugarCreacion: String(obj.LugarCreacion),
+      Desembolso: String(obj.Desembolso),
+      Fecha: String(obj.Fecha || "0"),
+      NumeroCliente: String(obj.NumeroCliente),
+      CodigoCliente: String(obj.CodigoCliente),
+      FechaVencimiento: String(obj.FechaVencimiento || "0"),
+      HashDocumento: String(obj.HashDocumento || "0"),
+      Owner: String(obj.Owner),
+      Estatus: String(obj.Estatus)
+    };
+
+    // Crear el objeto con la estructura exacta requerida
+    const requestData = {
+      id: id,
+      obj: formattedObj
+    };
+
+    console.log("Datos a encriptar:", JSON.stringify(requestData, null, 2));
+
+    const encryptedData = generateEncryptedData(requestData);
     const response = await axios.post(
       `${API_URL}/createone`,
       encryptedData,
