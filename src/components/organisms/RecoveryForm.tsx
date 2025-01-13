@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { KeyRound, Loader2 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
+import { recoverAccount } from '../services/apiService';
 
 const RecoveryForm: React.FC = () => {
   const [words, setWords] = useState<string[]>(Array(12).fill(''));
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleInputChange = (index: number, value: string) => {
     const newWords = [...words];
@@ -14,7 +17,7 @@ const RecoveryForm: React.FC = () => {
     setWords(newWords);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (newPassword !== confirmPassword) {
       Swal.fire({
         icon: 'error',
@@ -26,19 +29,27 @@ const RecoveryForm: React.FC = () => {
 
     setIsLoading(true);
     
-    // Simulating API call
-    setTimeout(() => {
-      console.log('Palabras ingresadas:', words);
-      console.log('Nueva contraseña:', newPassword);
-      
+    try {
+      const mnemonic = words.join(' ');
+      await recoverAccount(mnemonic, newPassword);
+
       Swal.fire({
         icon: 'success',
         title: 'Éxito',
         text: 'Contraseña restablecida correctamente.',
       });
-      
+
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Error en la recuperación:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.message || 'Error al restablecer la contraseña.',
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { registerUserWithSeed, postTest1 } from '../services/apiService';
+import { registerUserWithSeed } from '../services/apiService';
 
 interface RegisterFormProps {
   seedWords: string[];
@@ -35,9 +35,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ seedWords }) => {
     const mnemonic = words.join(' ');
 
     try {
-      const registerResponse = await registerUserWithSeed(mnemonic, newPassword);
-      const { privateKey, publicKey } = registerResponse.response;
-      await postTest1(privateKey, newPassword, publicKey);
+     await registerUserWithSeed(mnemonic, newPassword);
+  
+    
 
       Swal.fire({
         icon: 'success',

@@ -1,6 +1,6 @@
 import axios from "axios";
 import { showErrorModal } from "../atoms/ErrorModal";
-import { saveDataToDB } from "./indexedDBService";
+import { saveDataToDB, getDataFromDB } from "./indexedDBService";
 import CryptoJS from "crypto-js";
 import { ec as EC } from "elliptic";
 import { createHash, createCipheriv } from "crypto-browserify";
@@ -12,9 +12,12 @@ const DEFAULT_HEADERS = {
   "Content-Type": "application/json",
 };
 
-const SERVER_KEY_PUBLIC = '046512a948f37d9bba485e0cf0c1d697d9a93dd3dcae3213a23e31cc92041412388d478a4ba3c3442993be8c7228fbd7826bc3fae1539f8f28a09290db100f6314';
-const HARDCODED_PRIVATE_KEY = 'U2FsdGVkX1/g/O2dvk2V532T5ZWvXFTL7gWmdQcbS44uFrNL31LzNjL7BSNhmYuiAY5Yc1tkhfJT4xPhV2mJ6KKnu/7yJVTia3sc2cTtagebd5YFl8T9QaEz3yhp2dRt';
-const HARDCODED_PASSWORD = '1234567';
+// Obtener la clave pública del servidor desde variables de entorno
+const SERVER_KEY_PUBLIC = import.meta.env.VITE_SERVER_KEY_PUBLIC;
+
+if (!SERVER_KEY_PUBLIC) {
+  throw new Error("La clave pública del servidor no está configurada en las variables de entorno");
+}
 
 interface PagareData {
   Montocredito: string;
@@ -33,19 +36,29 @@ interface PagareData {
   Estatus: string;
 }
 
-export const generateEncryptedData = (messageObject: any) => {
+export const generateEncryptedData = async (messageObject: any) => {
   try {
-    console.log("Valores iniciales en generateEncryptedData:");
-    console.log("HARDCODED_PRIVATE_KEY:", HARDCODED_PRIVATE_KEY);
-    console.log("HARDCODED_PASSWORD:", HARDCODED_PASSWORD);
+    // Obtener credenciales de IndexedDB
+    const registerData = await getDataFromDB("registerData");
+    if (!registerData || !registerData.encrypted || !registerData.password) {
+      console.error("No se encontraron las credenciales en IndexedDB:", registerData);
+      throw new Error("No se encontraron las credenciales necesarias en IndexedDB");
+    }
+
+    const PRIVATE_KEY = registerData.encrypted;
+    const PASSWORD = registerData.password;
+
+    console.log("Valores obtenidos de IndexedDB en generateEncryptedData:");
+    console.log("PRIVATE_KEY:", PRIVATE_KEY);
+    console.log("PASSWORD:", PASSWORD);
     console.log("SERVER_KEY_PUBLIC:", SERVER_KEY_PUBLIC);
     console.log("Mensaje a encriptar:", messageObject);
 
-    const passwordHash = createHash("sha256").update(HARDCODED_PASSWORD).digest("hex");
-    const privateKeyC = CryptoJS.AES.decrypt(HARDCODED_PRIVATE_KEY, passwordHash).toString(CryptoJS.enc.Utf8);
+    const passwordHash = createHash("sha256").update(PASSWORD).digest("hex");
+    const privateKeyC = CryptoJS.AES.decrypt(PRIVATE_KEY, passwordHash).toString(CryptoJS.enc.Utf8);
 
     if (!privateKeyC) {
-      throw new Error("Error al desencriptar HARDCODED_PRIVATE_KEY: Resultado vacío o nulo.");
+      throw new Error("Error al desencriptar la llave privada: Resultado vacío o nulo.");
     }
 
     const e = new EC("p256");
@@ -82,7 +95,7 @@ export const generateEncryptedData = (messageObject: any) => {
 // Servicio para obtener todos los pagarés
 export const fetchAllPagares = async (): Promise<any> => {
   try {
-    const encryptedData = generateEncryptedData({});
+    const encryptedData = await generateEncryptedData({});
 
     console.log("Valores generados por generateEncryptedData:");
     console.log("Ciphers:", encryptedData.ciphers);
@@ -117,7 +130,7 @@ export const fetchAllPagares = async (): Promise<any> => {
 // Servicio para obtener los detalles de un pagaré por ID
 export const fetchPagareDetails = async (id: string) => {
   try {
-    const encryptedData = generateEncryptedData({ id });
+    const encryptedData = await generateEncryptedData({ id });
     console.log("Datos encriptados generados:", encryptedData);
 
     const response = await axios.post(
@@ -130,7 +143,6 @@ export const fetchPagareDetails = async (id: string) => {
 
     console.log("Respuesta de gethistoryone:", response.data);
 
-    // Asumiendo que response.data es un array con un solo elemento
     if (Array.isArray(response.data) && response.data.length > 0) {
       return response.data[0];
     }
@@ -149,7 +161,7 @@ export const fetchPagareDetails = async (id: string) => {
 // Servicio para actualizar el propietario de un pagaré
 export const updatePagareOwner = async (id: string, newOwner: string) => {
   try {
-    const encryptedData = generateEncryptedData({ id, new: newOwner });
+    const encryptedData = await generateEncryptedData({ id, new: newOwner });
     const response = await axios.post(
       `${API_URL}/updateoneowner`,
       encryptedData,
@@ -198,7 +210,9 @@ export const createPagare = async (id: string, obj: PagareData) => {
 
     console.log("Datos a encriptar:", JSON.stringify(requestData, null, 2));
 
-    const encryptedData = generateEncryptedData(requestData);
+    const encryptedData = await generateEncryptedData(requestData);
+    console.log("Body enviado a /createone:", JSON.stringify(encryptedData, null, 2));
+
     const response = await axios.post(
       `${API_URL}/createone`,
       encryptedData,
@@ -272,31 +286,45 @@ export const registerUserWithSeed = async (
   }
 };
 
-export const postTest1 = async (
-  encrypted: string,
-  password: string,
-  user: string
+// Servicio para recuperar cuenta con palabras semilla
+export const recoverAccount = async (
+  mnemonic: string,
+  newpassword: string
 ): Promise<any> => {
   try {
     const response = await axios.post(
-      `${API_URL}/test1`, 
-      { encrypted, password, user },
+      `${API_URL}/recover`,
+      { mnemonic, newpassword },
       {
         headers: DEFAULT_HEADERS
       }
     );
 
-    // Almacenar respuesta de /test1 en IndexedDB
-    const { ciphers, signature, hash } = response.data.response;
-    await saveDataToDB("test1Data", { ciphers, signature, hash, user });
+    const { privateKey, publicKey } = response.data.response;
+    
+    if (!privateKey || !publicKey) {
+      throw new Error("La respuesta del servidor no contiene las claves necesarias");
+    }
+
+    // Sobrescribimos los datos existentes con los nuevos
+    await saveDataToDB("registerData", {
+      encrypted: privateKey,
+      publicKey: publicKey,
+      password: newpassword
+    });
+    console.log("Credenciales actualizadas en IndexedDB");
 
     return response.data;
   } catch (error: any) {
-    console.error("Error en postTest1:", error);
-    const errorMessage = error.response?.data?.message || "Error al procesar el endpoint test1.";
+    console.error("Error en recoverAccount:", error);
+    const errorMessage = error.response?.data?.response?.message || 
+                        error.response?.data?.message || 
+                        error.message;
     showErrorModal("Error", errorMessage);
     throw new Error(errorMessage);
   }
 };
+
+
 
 

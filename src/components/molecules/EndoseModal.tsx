@@ -22,7 +22,7 @@ export const EndorseModal: React.FC<EndorseModalProps> = ({
   if (!isOpen) return null;
 
   const owners = [
-    { id: 'propietario1', name: 'Propietario 1' },
+    { id: 'FIRA', name: 'FIRA' },
     { id: 'propietario2', name: 'Propietario 2' },
   ];
 

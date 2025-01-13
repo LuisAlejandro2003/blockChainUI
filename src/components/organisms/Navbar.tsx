@@ -1,9 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Copy, CheckCircle2 } from 'lucide-react';
+import { getDataFromDB } from '../services/indexedDBService';
 
 const Navbar: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [publicKey, setPublicKey] = useState<string>('');
   const [isCopied, setIsCopied] = useState(false);
+
+  useEffect(() => {
+    const fetchPublicKey = async () => {
+      try {
+        const registerData = await getDataFromDB("registerData");
+        if (registerData?.publicKey) {
+          setPublicKey(registerData.publicKey);
+        }
+      } catch (error) {
+        console.error("Error al obtener la llave pública:", error);
+      }
+    };
+    fetchPublicKey();
+  }, []);
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
@@ -11,11 +27,11 @@ const Navbar: React.FC = () => {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText('your-public-key-here');
+      await navigator.clipboard.writeText(publicKey);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy text: ', err);
+    } catch (error) {
+      console.error("Error al copiar la llave pública:", error);
     }
   };
 
