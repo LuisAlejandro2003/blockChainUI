@@ -42,6 +42,8 @@ export const generateEncryptedData = async (messageObject: any) => {
     const registerData = await getDataFromDB("registerData");
     if (!registerData || !registerData.encrypted || !registerData.password) {
       console.error("No se encontraron las credenciales en IndexedDB:", registerData);
+      // Redirigir a la página de recuperación
+      window.location.href = '/recovery';
       throw new Error("No se encontraron las credenciales necesarias en IndexedDB");
     }
 
@@ -54,10 +56,14 @@ export const generateEncryptedData = async (messageObject: any) => {
     console.log("SERVER_KEY_PUBLIC:", SERVER_KEY_PUBLIC);
     console.log("Mensaje a encriptar:", messageObject);
 
+    //pasar la llave publica del user 
     const passwordHash = createHash("sha256").update(PASSWORD).digest("hex");
+    
     const privateKeyC = CryptoJS.AES.decrypt(PRIVATE_KEY, passwordHash).toString(CryptoJS.enc.Utf8);
 
     if (!privateKeyC) {
+      // Si hay error al desencriptar, también redirigimos a recuperación
+      window.location.href = '/recovery';
       throw new Error("Error al desencriptar la llave privada: Resultado vacío o nulo.");
     }
 

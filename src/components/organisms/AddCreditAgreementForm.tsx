@@ -35,32 +35,43 @@ const validationSchema = yup.object({
     .required('El monto del desembolso es obligatorio'),
   NumeroCliente: yup
     .string()
-    .matches(/^\d{11}$/, 'El número del cliente debe tener 11 dígitos')
-    .required('El número del cliente es obligatorio'),
+    .matches(/^\d+$/, 'El número del crédito debe contener solo dígitos')
+    .required('El número del crédito es obligatorio'),
   CodigoCliente: yup
     .string()
-    .matches(/^\d{11}$/, 'El código del cliente debe tener 11 dígitos')
+    .matches(/^\d+$/, 'El código del cliente debe contener solo dígitos')
     .required('El código del cliente es obligatorio'),
   HashDocumento: yup.string().optional(),
 });
 
 const AddCreditAgreementForm: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
+  const [plazoPeriodicidad, setPlazoPeriodicidad] = React.useState('mensual');
+
+  // Obtener la fecha actual en formato YYYY-MM-DD
+  const getCurrentDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const formik = useFormik({
     initialValues: {
       id: '',
-      Owner: '',
+      Owner: '041adae6e04383f75d734b6fbcdf21e445ae411d332cfaf5c0b7237a89849277192c8faf53fe79cf05af443aa9d9eddcad44b4ca3950be695121c6f8038e82520a',
       Montocredito: '',
       Plazo: '',
       PorInteres: '',
       PordeMoratorios: '',
       LugarCreacion: '',
-      Desembolso: '',
+      Desembolso: '0',
       NumeroCliente: '',
       CodigoCliente: '',
       HashDocumento: '',
       FechaPrimerPago: '',
-      Fecha: '',
+      Fecha: getCurrentDate(),
       FechaVencimiento: '',
     },
     validationSchema,
@@ -69,12 +80,12 @@ const AddCreditAgreementForm: React.FC = () => {
       try {
         const obj = {
           Montocredito: values.Montocredito,
-          Plazo: values.Plazo,
+          Plazo: `${values.Plazo} ${plazoPeriodicidad}`,
           FechaPrimerPago: values.FechaPrimerPago,
           PorInteres: values.PorInteres,
           PordeMoratorios: values.PordeMoratorios,
           LugarCreacion: values.LugarCreacion,
-          Desembolso: values.Desembolso,
+          Desembolso: "0",
           Fecha: values.Fecha,
           NumeroCliente: values.NumeroCliente,
           CodigoCliente: values.CodigoCliente,
@@ -84,6 +95,7 @@ const AddCreditAgreementForm: React.FC = () => {
           Estatus: 'ACTIVO',
         };
 
+        console.log('Datos a enviar:', obj);
         await createPagare(values.id, obj);
         Swal.fire('Éxito', 'Pagaré creado exitosamente', 'success');
         formik.resetForm();
@@ -143,16 +155,18 @@ const AddCreditAgreementForm: React.FC = () => {
 
               <div>
                 <label htmlFor="Owner" className="block text-sm font-medium text-gray-700 mb-1">
-                  Propietario
+                  Pagar a la orden de
                 </label>
                 <input
                   id="Owner"
                   name="Owner"
                   type="text"
-                  className={inputClasses}
-                  value={formik.values.Owner}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
+                  className={`${inputClasses} bg-gray-100`}
+                  value="Alsol Contigo, S.A. de C.V., SOFOM, E.N.R."
+                  readOnly
+                  onChange={(e) => {
+                    formik.setFieldValue('Owner', '041adae6e04383f75d734b6fbcdf21e445ae411d332cfaf5c0b7237a89849277192c8faf53fe79cf05af443aa9d9eddcad44b4ca3950be695121c6f8038e82520a');
+                  }}
                 />
                 {formik.touched.Owner && formik.errors.Owner && (
                   <div className={errorClasses}>{formik.errors.Owner}</div>
@@ -162,11 +176,72 @@ const AddCreditAgreementForm: React.FC = () => {
 
             {/* Campos numéricos */}
             {[
-              { name: 'Montocredito', label: 'Monto del crédito' },
-              { name: 'Plazo', label: 'Plazo en meses' },
+              { name: 'Montocredito', label: 'Bueno por' },
               { name: 'PorInteres', label: 'Tasa de interés (%)' },
               { name: 'PordeMoratorios', label: 'Tasa moratoria (%)' },
-              { name: 'Desembolso', label: 'Monto del desembolso' },
+            ].map((field) => (
+              <div key={field.name}>
+                <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-1">
+                  {field.label}
+                </label>
+                <input
+                  id={field.name}
+                  name={field.name}
+                  type="number"
+                  className={inputClasses}
+                  value={formik.values[field.name as keyof typeof formik.values]}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+                {formik.touched[field.name as keyof typeof formik.touched] && 
+                 formik.errors[field.name as keyof typeof formik.errors] && (
+                  <div className={errorClasses}>
+                    {formik.errors[field.name as keyof typeof formik.errors]?.toString()}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Plazo y Periodicidad */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="Plazo" className="block text-sm font-medium text-gray-700 mb-1">
+                  Plazo en meses
+                </label>
+                <input
+                  id="Plazo"
+                  name="Plazo"
+                  type="number"
+                  className={inputClasses}
+                  value={formik.values.Plazo}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+                {formik.touched.Plazo && formik.errors.Plazo && (
+                  <div className={errorClasses}>{formik.errors.Plazo}</div>
+                )}
+              </div>
+              <div>
+                <label htmlFor="periodicidad" className="block text-sm font-medium text-gray-700 mb-1">
+                  Periodicidad
+                </label>
+                <select
+                  id="periodicidad"
+                  value={plazoPeriodicidad}
+                  onChange={(e) => setPlazoPeriodicidad(e.target.value)}
+                  className={inputClasses}
+                >
+                  <option value="semanal">Semanal</option>
+                  <option value="catorcenal">Catorcenal</option>
+                  <option value="mensual">Mensual</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Otros campos numéricos */}
+            {[
+              { name: 'NumeroCliente', label: 'Número del crédito' },
+              { name: 'CodigoCliente', label: 'Código del cliente' },
             ].map((field) => (
               <div key={field.name}>
                 <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-1">
@@ -192,9 +267,6 @@ const AddCreditAgreementForm: React.FC = () => {
 
             {/* Campos de texto */}
             {[
-              { name: 'LugarCreacion', label: 'Lugar de creación' },
-              { name: 'NumeroCliente', label: 'Número del cliente' },
-              { name: 'CodigoCliente', label: 'Código del cliente' },
               { name: 'HashDocumento', label: 'Hash del documento' },
             ].map((field) => (
               <div key={field.name}>
@@ -219,10 +291,45 @@ const AddCreditAgreementForm: React.FC = () => {
               </div>
             ))}
 
-            {/* Fechas */}
+            {/* Lugar y Fecha de Creación */}
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="LugarCreacion" className="block text-sm font-medium text-gray-700 mb-1">
+                  Lugar de creación
+                </label>
+                <input
+                  id="LugarCreacion"
+                  name="LugarCreacion"
+                  type="text"
+                  className={inputClasses}
+                  value={formik.values.LugarCreacion}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+                {formik.touched.LugarCreacion && formik.errors.LugarCreacion && (
+                  <div className={errorClasses}>{formik.errors.LugarCreacion}</div>
+                )}
+              </div>
+              <div>
+                <label htmlFor="Fecha" className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha de creación
+                </label>
+                <input
+                  id="Fecha"
+                  name="Fecha"
+                  type="date"
+                  className={inputClasses}
+                  value={formik.values.Fecha}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  readOnly
+                />
+              </div>
+            </div>
+
+            {/* Otras Fechas */}
             {[
               { name: 'FechaPrimerPago', label: 'Fecha del primer pago' },
-              { name: 'Fecha', label: 'Fecha de creación' },
               { name: 'FechaVencimiento', label: 'Fecha de vencimiento' },
             ].map((field) => (
               <div key={field.name}>

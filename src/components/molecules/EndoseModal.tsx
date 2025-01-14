@@ -24,6 +24,7 @@ export const EndorseModal: React.FC<EndorseModalProps> = ({
   const owners = [
     { id: 'FIRA', name: 'FIRA' },
     { id: 'propietario2', name: 'Propietario 2' },
+    { id: '041adae6e04383f75d734b6fbcdf21e445ae411d332cfaf5c0b7237a89849277192c8faf53fe79cf05af443aa9d9eddcad44b4ca3950be695121c6f8038e82520a', name: 'ALSOL' }
   ];
 
   const isConfirmValid = confirmText.toLowerCase() === 'confirmar';

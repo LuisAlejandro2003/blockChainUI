@@ -22,31 +22,34 @@ const Modal: React.FC<ModalProps> = ({
 
   const fieldLabels: { [key: string]: string } = {
     txId: "ID de Transacción",
-    Montocredito: "Monto del Crédito",
-    Plazo: "Plazo (días)",
-    FechaPrimerPago: "Fecha del Primer Pago",
-    PorInteres: "Porcentaje de Interés",
-    PordeMoratorios: "Porcentaje de Moratorios",
-    LugarCreacion: "Lugar de Creación",
-    Desembolso: "Desembolso",
-    Fecha: "Fecha de Creación",
-    NumeroCliente: "Número de Cliente",
-    CodigoCliente: "Código de Cliente",
-    FechaVencimiento: "Fecha de Vencimiento",
-    HashDocumento: "Hash del Documento",
-    Owner: "Propietario",
+    Montocredito: "Bueno por",
+    Plazo: "Plazo",
+    FechaPrimerPago: "Fecha del primer pago",
+    PorInteres: "Tasa de interés (%)",
+    PordeMoratorios: "Tasa moratoria (%)",
+    LugarCreacion: "Lugar de creación",
+    Fecha: "Fecha de creación",
+    NumeroCliente: "Número del crédito",
+    CodigoCliente: "Código del cliente",
+    FechaVencimiento: "Fecha de vencimiento",
+    HashDocumento: "Hash del documento",
+    Owner: "Pagar a la orden de",
     Estatus: "Estatus",
   };
 
   const formatValue = (key: string, value: string | number | undefined) => {
     if (!value || value === "N/A") return "N/A";
 
-    if (key === "Montocredito" || key === "Desembolso") {
+    if (key === "Montocredito") {
       return `$${value}`;
     }
 
     if (key === "PorInteres" || key === "PordeMoratorios") {
       return `${value}%`;
+    }
+
+    if (key === "Owner" && value === "041adae6e04383f75d734b6fbcdf21e445ae411d332cfaf5c0b7237a89849277192c8faf53fe79cf05af443aa9d9eddcad44b4ca3950be695121c6f8038e82520a") {
+      return "Alsol Contigo, S.A. de C.V., SOFOM, E.N.R.";
     }
 
     return value;
@@ -96,34 +99,46 @@ const Modal: React.FC<ModalProps> = ({
           style={{ maxHeight: "calc(85vh - 180px)" }}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* ID de Transacción */}
+            <div className="col-span-full">
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                {fieldLabels["txId"]}
+              </label>
+              <div className="break-all bg-gray-50 px-4 py-2.5 text-gray-800 text-sm rounded-lg border border-gray-200">
+                {formatValue("txId", data.txId)}
+              </div>
+            </div>
+
+            {/* Pagar a la orden de */}
+            <div className="col-span-full">
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                {fieldLabels["Owner"]}
+              </label>
+              <div className="bg-gray-50 px-4 py-2.5 text-gray-800 text-sm rounded-lg border border-gray-200">
+                {formatValue("Owner", data.Record?.["Owner"])}
+              </div>
+            </div>
+
+            {/* Resto de campos */}
             {Object.keys(fieldLabels).map((key) => {
-              if (key === "FechaVencimiento" || key === "HashDocumento") {
-                return null; // No renderizamos estos aquí, se manejan juntos más adelante
+              if (key === "FechaVencimiento" || key === "HashDocumento" || key === "txId" || key === "Owner") {
+                return null;
               }
 
               return (
-                <div
-                  key={key}
-                  className={`${
-                    key === "txId" ? "col-span-full" : ""
-                  }`}
-                >
+                <div key={key}>
                   <label className="block text-sm font-medium text-gray-600 mb-1">
                     {fieldLabels[key]}
                   </label>
                   <div
                     className={`
-                      ${key === "txId" ? "break-all" : ""}
-                      ${key === "Estatus" ? "font-medium" : ""}
                       bg-gray-50 px-4 py-2.5 text-gray-800 text-sm rounded-lg border border-gray-200
+                      ${key === "Estatus" ? "font-medium" : ""}
                       ${data.Record?.[key] === "Activo" ? "text-green-600" : ""}
                       ${data.Record?.[key] === "Inactivo" ? "text-red-600" : ""}
                     `}
                   >
-                    {formatValue(
-                      key,
-                      key === "txId" ? data.txId : data.Record?.[key]
-                    )}
+                    {formatValue(key, data.Record?.[key])}
                   </div>
                 </div>
               );
@@ -136,10 +151,7 @@ const Modal: React.FC<ModalProps> = ({
                   {fieldLabels["FechaVencimiento"]}
                 </label>
                 <div className="bg-gray-50 px-4 py-2.5 text-gray-800 text-sm rounded-lg border border-gray-200">
-                  {formatValue(
-                    "FechaVencimiento",
-                    data.Record?.["FechaVencimiento"]
-                  )}
+                  {formatValue("FechaVencimiento", data.Record?.["FechaVencimiento"])}
                 </div>
               </div>
               <div>
