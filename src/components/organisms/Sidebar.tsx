@@ -1,6 +1,8 @@
 import React from 'react';
 import { FileText, Repeat2, LogOut, Plus } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { logoutUser } from '../services/apiService';
+import Swal from 'sweetalert2';
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -42,6 +44,20 @@ const Sidebar: React.FC = () => {
     navigate(path);
   };
 
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      navigate('/');
+    } catch (error: any) {
+      console.error('Error al cerrar sesión:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.message || 'Error al cerrar sesión.',
+      });
+    }
+  };
+
   return (
     <div className="h-screen bg-white border-r border-gray-200 flex flex-col w-64 py-6 px-4">
       {/* Logo */}
@@ -80,7 +96,7 @@ const Sidebar: React.FC = () => {
         <SidebarItem
           icon={<LogOut size={20} />}
           text="Cerrar sesión"
-          onClick={() => console.log('Logout clicked')}
+          onClick={handleLogout}
         />
       </div>
     </div>

@@ -7,6 +7,7 @@ interface ButtonProps {
   className?: string;
   type?: 'button' | 'submit' | 'reset';
   variant?: 'default' | 'login'; // Variante para diseño del login
+  disabled?: boolean;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -15,6 +16,7 @@ const Button: React.FC<ButtonProps> = ({
   className = '',
   type = 'button',
   variant = 'default',
+  disabled,
 }) => {
   const baseClasses =
     variant === 'login'
@@ -26,6 +28,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       onClick={onClick}
       className={`${baseClasses} ${className}`}
+      disabled={disabled}
     >
       {children}
     </button>

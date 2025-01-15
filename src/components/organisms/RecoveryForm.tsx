@@ -8,6 +8,7 @@ const RecoveryForm: React.FC = () => {
   const [words, setWords] = useState<string[]>(Array(12).fill(''));
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -18,6 +19,17 @@ const RecoveryForm: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    // Validar email
+    if (!email || !email.includes('@')) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Por favor ingresa un correo electrónico válido.',
+      });
+      return;
+    }
+
+    // Validar contraseñas
     if (newPassword !== confirmPassword) {
       Swal.fire({
         icon: 'error',
@@ -31,12 +43,12 @@ const RecoveryForm: React.FC = () => {
     
     try {
       const mnemonic = words.join(' ');
-      await recoverAccount(mnemonic, newPassword);
+      await recoverAccount(mnemonic, newPassword, email);
 
       Swal.fire({
         icon: 'success',
         title: 'Éxito',
-        text: 'Contraseña restablecida correctamente.',
+        text: 'Cuenta recuperada correctamente.',
       });
 
       navigate('/dashboard');
@@ -45,7 +57,7 @@ const RecoveryForm: React.FC = () => {
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: error.message || 'Error al restablecer la contraseña.',
+        text: error.message || 'Error al recuperar la cuenta.',
       });
     } finally {
       setIsLoading(false);
@@ -62,10 +74,10 @@ const RecoveryForm: React.FC = () => {
               <KeyRound className="w-8 h-8 text-yellow-500" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Recuperación de Contraseña
+              Recuperación de Cuenta
             </h1>
             <p className="text-gray-600 max-w-lg mx-auto">
-              Ingresa las 12 palabras de recuperación y configura tu nueva contraseña
+              Ingresa las 12 palabras de recuperación, tu correo electrónico y configura tu nueva contraseña
               para restablecer el acceso a tu cuenta.
             </p>
           </div>
@@ -88,6 +100,22 @@ const RecoveryForm: React.FC = () => {
                 />
               </div>
             ))}
+          </div>
+
+          {/* Email Field */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Correo Electrónico
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg
+                focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500
+                transition-colors duration-200"
+              placeholder="Ingresa tu correo electrónico"
+            />
           </div>
 
           {/* Password Section */}
@@ -138,7 +166,7 @@ const RecoveryForm: React.FC = () => {
                   <span>Procesando...</span>
                 </>
               ) : (
-                'Restablecer Contraseña'
+                'Recuperar Cuenta'
               )}
             </button>
           </div>

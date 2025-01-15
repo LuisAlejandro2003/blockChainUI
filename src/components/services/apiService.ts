@@ -38,17 +38,21 @@ interface PagareData {
 
 export const generateEncryptedData = async (messageObject: any) => {
   try {
-    // Obtener credenciales de IndexedDB
+    // Obtener usuario activo de IndexedDB
     const registerData = await getDataFromDB("registerData");
-    if (!registerData || !registerData.encrypted || !registerData.password) {
-      console.error("No se encontraron las credenciales en IndexedDB:", registerData);
-      // Redirigir a la página de recuperación
-      window.location.href = '/recovery';
-      throw new Error("No se encontraron las credenciales necesarias en IndexedDB");
+    if (!registerData || !Array.isArray(registerData)) {
+      console.error("No se encontraron datos en IndexedDB");
+      throw new Error("No se encontraron datos en IndexedDB");
     }
 
-    const PRIVATE_KEY = registerData.encrypted;
-    const PASSWORD = registerData.password;
+    const activeUser = registerData.find(account => account.isActive);
+    if (!activeUser || !activeUser.encrypted || !activeUser.password) {
+      console.error("No se encontraron las credenciales necesarias del usuario activo");
+      throw new Error("No se encontraron las credenciales necesarias del usuario activo");
+    }
+
+    const PRIVATE_KEY = activeUser.encrypted;
+    const PASSWORD = activeUser.password;
 
     console.log("Valores obtenidos de IndexedDB en generateEncryptedData:");
     console.log("PRIVATE_KEY:", PRIVATE_KEY);
@@ -62,8 +66,6 @@ export const generateEncryptedData = async (messageObject: any) => {
     const privateKeyC = CryptoJS.AES.decrypt(PRIVATE_KEY, passwordHash).toString(CryptoJS.enc.Utf8);
 
     if (!privateKeyC) {
-      // Si hay error al desencriptar, también redirigimos a recuperación
-      window.location.href = '/recovery';
       throw new Error("Error al desencriptar la llave privada: Resultado vacío o nulo.");
     }
 
@@ -208,7 +210,7 @@ export const createPagare = async (id: string, obj: PagareData) => {
       Estatus: String(obj.Estatus)
     };
 
-    // Crear el objeto con la estructura exacta requerida
+    // Crear el objeto 
     const requestData = {
       id: id,
       obj: formattedObj
@@ -258,7 +260,8 @@ export const fetchSeedWords = async () => {
 // Servicio para registrar usuario con semilla
 export const registerUserWithSeed = async (
   mnemonic: string,
-  password: string
+  password: string,
+  email: string
 ): Promise<any> => {
   try {
     const response = await axios.post(
@@ -275,11 +278,24 @@ export const registerUserWithSeed = async (
       throw new Error("La respuesta del servidor no contiene las claves necesarias");
     }
 
-    await saveDataToDB("registerData", { 
+    // Desactivar todas las cuentas existentes
+    const existingAccounts = await getDataFromDB("registerData") || [];
+    const updatedAccounts = existingAccounts.map((account: any) => ({
+      ...account,
+      isActive: false
+    }));
+
+    // Agregar la nueva cuenta como activa
+    updatedAccounts.push({
       encrypted: privateKey,
       publicKey: publicKey,
-      password: password
+      password: password,
+      email: email,
+      isActive: true
     });
+
+    await saveDataToDB("registerData", updatedAccounts);
+    console.log("Nueva cuenta registrada y activada");
 
     return response.data;
   } catch (error: any) {
@@ -295,7 +311,8 @@ export const registerUserWithSeed = async (
 // Servicio para recuperar cuenta con palabras semilla
 export const recoverAccount = async (
   mnemonic: string,
-  newpassword: string
+  newpassword: string,
+  email: string
 ): Promise<any> => {
   try {
     const response = await axios.post(
@@ -312,13 +329,24 @@ export const recoverAccount = async (
       throw new Error("La respuesta del servidor no contiene las claves necesarias");
     }
 
-    // Sobrescribimos los datos existentes con los nuevos
-    await saveDataToDB("registerData", {
+    // Desactivar todas las cuentas existentes
+    const existingAccounts = await getDataFromDB("registerData") || [];
+    const updatedAccounts = existingAccounts.map((account: any) => ({
+      ...account,
+      isActive: false
+    }));
+
+    // Agregar la cuenta recuperada como activa
+    updatedAccounts.push({
       encrypted: privateKey,
       publicKey: publicKey,
-      password: newpassword
+      password: newpassword,
+      email: email,
+      isActive: true
     });
-    console.log("Credenciales actualizadas en IndexedDB");
+
+    await saveDataToDB("registerData", updatedAccounts);
+    console.log("Cuenta recuperada y activada");
 
     return response.data;
   } catch (error: any) {
@@ -328,6 +356,63 @@ export const recoverAccount = async (
                         error.message;
     showErrorModal("Error", errorMessage);
     throw new Error(errorMessage);
+  }
+};
+
+export const loginUser = async (email: string, password: string): Promise<boolean> => {
+  try {
+    const accounts = await getDataFromDB("registerData") || [];
+    
+    // Buscar la cuenta con el email y password proporcionados
+    const accountIndex = accounts.findIndex((account: any) => 
+      account.email === email && account.password === password
+    );
+
+    if (accountIndex === -1) {
+      throw new Error("Credenciales inválidas");
+    }
+
+    // Desactivar todas las cuentas y activar la seleccionada
+    const updatedAccounts = accounts.map((account: any, index: number) => ({
+      ...account,
+      isActive: index === accountIndex
+    }));
+
+    await saveDataToDB("registerData", updatedAccounts);
+    console.log("Sesión iniciada correctamente");
+    
+    return true;
+  } catch (error: any) {
+    console.error("Error en loginUser:", error);
+    showErrorModal("Error", error.message);
+    return false;
+  }
+};
+
+export const getActiveAccount = async () => {
+  try {
+    const accounts = await getDataFromDB("registerData") || [];
+    return accounts.find((account: any) => account.isActive) || null;
+  } catch (error) {
+    console.error("Error al obtener la cuenta activa:", error);
+    return null;
+  }
+};
+
+export const logoutUser = async () => {
+  try {
+    const accounts = await getDataFromDB("registerData") || [];
+    const updatedAccounts = accounts.map((account: any) => ({
+      ...account,
+      isActive: false
+    }));
+
+    await saveDataToDB("registerData", updatedAccounts);
+    console.log("Sesión cerrada correctamente");
+    return true;
+  } catch (error) {
+    console.error("Error al cerrar sesión:", error);
+    return false;
   }
 };
 

@@ -12,6 +12,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ seedWords }) => {
   const [words, setWords] = useState<string[]>(seedWords);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -35,7 +36,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ seedWords }) => {
     const mnemonic = words.join(' ');
 
     try {
-     await registerUserWithSeed(mnemonic, newPassword);
+     await registerUserWithSeed(mnemonic, newPassword, email);
   
     
 
@@ -101,6 +102,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ seedWords }) => {
 
         {/* Password and Submit Section */}
         <div className="grid grid-cols-3 gap-4 items-center">
+          <div>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Correo electrónico"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg
+                focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500
+                transition-colors duration-200"
+            />
+          </div>
           <div>
             <input
               type="password"

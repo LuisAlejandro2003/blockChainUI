@@ -7,7 +7,7 @@ interface InputFieldProps {
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   className?: string;
-  variant?: 'default' | 'login'; // Variante para diseño del login
+  disabled?: boolean;
 }
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -16,20 +16,16 @@ const InputField: React.FC<InputFieldProps> = ({
   value,
   onChange,
   className = '',
-  variant = 'default', // Variante por defecto
+  disabled = false,
 }) => {
-  const baseClasses =
-    variant === 'login'
-      ? 'w-5/6 px-4 py-2 border border-[#0E4A67] rounded-md text-[#0E4A67] focus:outline-none text-base'
-      : 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500';
-
   return (
     <input
       type={type}
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      className={`${baseClasses} ${className}`}
+      className={`${className}`}
+      disabled={disabled}
     />
   );
 };

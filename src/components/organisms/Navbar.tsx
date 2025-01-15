@@ -11,8 +11,15 @@ const Navbar: React.FC = () => {
     const fetchPublicKey = async () => {
       try {
         const registerData = await getDataFromDB("registerData");
-        if (registerData?.publicKey) {
-          setPublicKey(registerData.publicKey);
+        if (registerData && Array.isArray(registerData)) {
+          const activeUser = registerData.find(account => account.isActive);
+          if (activeUser?.publicKey) {
+            setPublicKey(activeUser.publicKey);
+          } else {
+            console.error("No se encontró un usuario activo con llave pública");
+          }
+        } else {
+          console.error("No se encontraron datos de registro");
         }
       } catch (error) {
         console.error("Error al obtener la llave pública:", error);
@@ -26,6 +33,11 @@ const Navbar: React.FC = () => {
   };
 
   const handleCopy = async () => {
+    if (!publicKey) {
+      console.error("No hay llave pública disponible para copiar");
+      return;
+    }
+    
     try {
       await navigator.clipboard.writeText(publicKey);
       setIsCopied(true);
