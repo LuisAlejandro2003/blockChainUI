@@ -4,6 +4,24 @@ import * as yup from 'yup';
 import { Loader2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { createPagare } from '../services/apiService';
+import { useLocation } from 'react-router-dom';
+
+interface FormValues {
+  id: string;
+  Owner: string;
+  Montocredito: string;
+  Plazo: string;
+  PorInteres: string;
+  PordeMoratorios: string;
+  LugarCreacion: string;
+  Desembolso: string;
+  NumeroCliente: string;
+  CodigoCliente: string;
+  HashDocumento: string;
+  FechaPrimerPago: string;
+  Fecha: string;
+  FechaVencimiento: string;
+}
 
 const validationSchema = yup.object({
   id: yup
@@ -47,6 +65,8 @@ const validationSchema = yup.object({
 const AddCreditAgreementForm: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
   const [plazoPeriodicidad, setPlazoPeriodicidad] = React.useState('mensual');
+  const location = useLocation();
+  const receivedData = location.state?.formData;
 
   // Obtener la fecha actual en formato YYYY-MM-DD
   const getCurrentDate = () => {
@@ -57,22 +77,22 @@ const AddCreditAgreementForm: React.FC = () => {
     return `${year}-${month}-${day}`;
   };
 
-  const formik = useFormik({
+  const formik = useFormik<FormValues>({
     initialValues: {
-      id: '',
-      Owner: '041adae6e04383f75d734b6fbcdf21e445ae411d332cfaf5c0b7237a89849277192c8faf53fe79cf05af443aa9d9eddcad44b4ca3950be695121c6f8038e82520a',
-      Montocredito: '',
-      Plazo: '',
-      PorInteres: '',
-      PordeMoratorios: '',
-      LugarCreacion: '',
-      Desembolso: '0',
-      NumeroCliente: '',
-      CodigoCliente: '',
-      HashDocumento: '',
-      FechaPrimerPago: '',
+      id: receivedData?.id || '',
+      Owner: receivedData?.Owner || '041adae6e04383f75d734b6fbcdf21e445ae411d332cfaf5c0b7237a89849277192c8faf53fe79cf05af443aa9d9eddcad44b4ca3950be695121c6f8038e82520a',
+      Montocredito: receivedData?.Montocredito || '',
+      Plazo: receivedData?.Plazo || '',
+      PorInteres: receivedData?.PorInteres || '',
+      PordeMoratorios: receivedData?.PordeMoratorios || '',
+      LugarCreacion: receivedData?.LugarCreacion || '',
+      Desembolso: receivedData?.Desembolso || '0',
+      NumeroCliente: receivedData?.NumeroCliente || '',
+      CodigoCliente: receivedData?.CodigoCliente || '',
+      HashDocumento: receivedData?.HashDocumento || '',
+      FechaPrimerPago: receivedData?.FechaPrimerPago || '',
       Fecha: getCurrentDate(),
-      FechaVencimiento: '',
+      FechaVencimiento: receivedData?.FechaVencimiento || '',
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -85,7 +105,7 @@ const AddCreditAgreementForm: React.FC = () => {
           PorInteres: values.PorInteres,
           PordeMoratorios: values.PordeMoratorios,
           LugarCreacion: values.LugarCreacion,
-          Desembolso: "0",
+          Desembolso: values.Desembolso,
           Fecha: values.Fecha,
           NumeroCliente: values.NumeroCliente,
           CodigoCliente: values.CodigoCliente,
@@ -106,6 +126,16 @@ const AddCreditAgreementForm: React.FC = () => {
       }
     },
   });
+
+  // Establecer la periodicidad si viene en los datos recibidos
+  React.useEffect(() => {
+    if (receivedData?.Plazo) {
+      const [_, periodicidad] = receivedData.Plazo.split(' ');
+      if (periodicidad) {
+        setPlazoPeriodicidad(periodicidad.toLowerCase());
+      }
+    }
+  }, [receivedData]);
 
   const inputClasses = `
     w-full px-4 py-2.5 rounded-lg border border-gray-300

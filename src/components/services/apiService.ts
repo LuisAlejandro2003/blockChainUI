@@ -38,7 +38,6 @@ interface PagareData {
 
 export const generateEncryptedData = async (messageObject: any) => {
   try {
-    // Obtener usuario activo de IndexedDB
     const registerData = await getDataFromDB("registerData");
     if (!registerData || !Array.isArray(registerData)) {
       console.error("No se encontraron datos en IndexedDB");
@@ -46,46 +45,26 @@ export const generateEncryptedData = async (messageObject: any) => {
     }
 
     const activeUser = registerData.find(account => account.isActive);
-    if (!activeUser || !activeUser.encrypted || !activeUser.password) {
+    if (!activeUser || !activeUser.encrypted) {
       console.error("No se encontraron las credenciales necesarias del usuario activo");
       throw new Error("No se encontraron las credenciales necesarias del usuario activo");
     }
 
-    const PRIVATE_KEY = activeUser.encrypted;
-    const PASSWORD = activeUser.password;
-
-    console.log("Valores obtenidos de IndexedDB en generateEncryptedData:");
-    console.log("PRIVATE_KEY:", PRIVATE_KEY);
-    console.log("PASSWORD:", PASSWORD);
-    console.log("SERVER_KEY_PUBLIC:", SERVER_KEY_PUBLIC);
-    console.log("Mensaje a encriptar:", messageObject);
-
-    //pasar la llave publica del user 
-    const passwordHash = createHash("sha256").update(PASSWORD).digest("hex");
-    
-    const privateKeyC = CryptoJS.AES.decrypt(PRIVATE_KEY, passwordHash).toString(CryptoJS.enc.Utf8);
-
-    if (!privateKeyC) {
-      throw new Error("Error al desencriptar la llave privada: Resultado vacío o nulo.");
-    }
-
     const e = new EC("p256");
     const recipientPublicKey = e.keyFromPublic(SERVER_KEY_PUBLIC, "hex");
-    const senderPrivateKey = e.keyFromPrivate(privateKeyC, "hex");
+    const senderPrivateKey = e.keyFromPrivate(activeUser.encrypted, "hex");
 
     const sharedKey = senderPrivateKey.derive(recipientPublicKey.getPublic());
     const sharedKeyHash = createHash("sha256").update(sharedKey.toString(16)).digest();
 
-    const keyPair = e.keyFromPrivate(privateKeyC, "hex");
+    const keyPair = e.keyFromPrivate(activeUser.encrypted, "hex");
 
-    // Convertir el objeto a string JSON
     const jsonString = JSON.stringify(messageObject);
 
     const hash = createHash("sha256").update(jsonString).digest("hex");
     const signature = keyPair.sign(hash, "hex");
     const signatureHex = signature.toDER("hex");
 
-    // Crear un buffer de ceros para el IV usando el paquete buffer
     const iv = Buffer.alloc(16, 0);
     const cipher = createCipheriv("aes-256-gcm", Buffer.from(sharedKeyHash), iv);
     let encrypted = cipher.update(jsonString, "utf8", "hex");
@@ -103,26 +82,14 @@ export const generateEncryptedData = async (messageObject: any) => {
 // Servicio para obtener todos los pagarés
 export const fetchAllPagares = async (): Promise<any> => {
   try {
-    const encryptedData = await generateEncryptedData({});
-
-    console.log("Valores generados por generateEncryptedData:");
-    console.log("Ciphers:", encryptedData.ciphers);
-    console.log("Signature:", encryptedData.signature);
-    console.log("Hash:", encryptedData.hash);
-    console.log("User:", encryptedData.user);
-
-    console.log("Cuerpo enviado a /getAll:");
-    console.log(JSON.stringify(encryptedData, null, 2));
-
-    const response = await axios.post(
-      `${API_URL}/getAll`,
-      encryptedData,
+    const response = await axios.get(
+      `${API_URL}/pagares`,
       {
         headers: DEFAULT_HEADERS,
       }
     );
 
-    return response.data;
+    return response.data.response;
   } catch (error: any) {
     console.error("Error detallado en fetchAllPagares:", error);
     if (error.response) {
@@ -192,7 +159,6 @@ export const updatePagareOwner = async (id: string, newOwner: string) => {
 // Servicio para crear un nuevo pagaré
 export const createPagare = async (id: string, obj: PagareData) => {
   try {
-    // Asegurarnos de que todos los campos sean strings
     const formattedObj = {
       Montocredito: String(obj.Montocredito),
       Plazo: String(obj.Plazo),
@@ -210,7 +176,6 @@ export const createPagare = async (id: string, obj: PagareData) => {
       Estatus: String(obj.Estatus)
     };
 
-    // Crear el objeto 
     const requestData = {
       id: id,
       obj: formattedObj
@@ -267,9 +232,7 @@ export const registerUserWithSeed = async (
     const response = await axios.post(
       `${API_URL}/register`, 
       { mnemonic, password },
-      {
-        headers: DEFAULT_HEADERS
-      }
+      { headers: DEFAULT_HEADERS }
     );
 
     const { privateKey, publicKey } = response.data.response;
@@ -277,6 +240,10 @@ export const registerUserWithSeed = async (
     if (!privateKey || !publicKey) {
       throw new Error("La respuesta del servidor no contiene las claves necesarias");
     }
+
+    // Encriptamos la llave privada con la contraseña
+    const passwordHash = createHash("sha256").update(password).digest("hex");
+    const encryptedPrivateKey = CryptoJS.AES.encrypt(privateKey, passwordHash).toString();
 
     // Desactivar todas las cuentas existentes
     const existingAccounts = await getDataFromDB("registerData") || [];
@@ -287,9 +254,8 @@ export const registerUserWithSeed = async (
 
     // Agregar la nueva cuenta como activa
     updatedAccounts.push({
-      encrypted: privateKey,
+      encrypted: encryptedPrivateKey,
       publicKey: publicKey,
-      password: password,
       email: email,
       isActive: true
     });
@@ -318,9 +284,7 @@ export const recoverAccount = async (
     const response = await axios.post(
       `${API_URL}/recover`,
       { mnemonic, newpassword },
-      {
-        headers: DEFAULT_HEADERS
-      }
+      { headers: DEFAULT_HEADERS }
     );
 
     const { privateKey, publicKey } = response.data.response;
@@ -328,6 +292,10 @@ export const recoverAccount = async (
     if (!privateKey || !publicKey) {
       throw new Error("La respuesta del servidor no contiene las claves necesarias");
     }
+
+    // Encriptamos la llave privada con la nueva contraseña
+    const passwordHash = createHash("sha256").update(newpassword).digest("hex");
+    const encryptedPrivateKey = CryptoJS.AES.encrypt(privateKey, passwordHash).toString();
 
     // Desactivar todas las cuentas existentes
     const existingAccounts = await getDataFromDB("registerData") || [];
@@ -338,9 +306,8 @@ export const recoverAccount = async (
 
     // Agregar la cuenta recuperada como activa
     updatedAccounts.push({
-      encrypted: privateKey,
+      encrypted: encryptedPrivateKey,
       publicKey: publicKey,
-      password: newpassword,
       email: email,
       isActive: true
     });
@@ -362,26 +329,34 @@ export const recoverAccount = async (
 export const loginUser = async (email: string, password: string): Promise<boolean> => {
   try {
     const accounts = await getDataFromDB("registerData") || [];
+    const account = accounts.find((acc: any) => acc.email === email);
     
-    // Buscar la cuenta con el email y password proporcionados
-    const accountIndex = accounts.findIndex((account: any) => 
-      account.email === email && account.password === password
-    );
-
-    if (accountIndex === -1) {
+    if (!account) {
       throw new Error("Credenciales inválidas");
     }
 
-    // Desactivar todas las cuentas y activar la seleccionada
-    const updatedAccounts = accounts.map((account: any, index: number) => ({
-      ...account,
-      isActive: index === accountIndex
-    }));
+    // Verificar contraseña intentando desencriptar la llave privada
+    try {
+      const passwordHash = createHash("sha256").update(password).digest("hex");
+      const privateKey = CryptoJS.AES.decrypt(account.encrypted, passwordHash).toString(CryptoJS.enc.Utf8);
+      
+      if (!privateKey) {
+        throw new Error("Credenciales inválidas");
+      }
 
-    await saveDataToDB("registerData", updatedAccounts);
-    console.log("Sesión iniciada correctamente");
-    
-    return true;
+      // Si la desencriptación fue exitosa, activar esta cuenta y desactivar las demás
+      const updatedAccounts = accounts.map((acc: any) => ({
+        ...acc,
+        isActive: acc.email === email
+      }));
+
+      await saveDataToDB("registerData", updatedAccounts);
+      console.log("Sesión iniciada correctamente");
+      
+      return true;
+    } catch {
+      throw new Error("Credenciales inválidas");
+    }
   } catch (error: any) {
     console.error("Error en loginUser:", error);
     showErrorModal("Error", error.message);
@@ -415,7 +390,3 @@ export const logoutUser = async () => {
     return false;
   }
 };
-
-
-
-

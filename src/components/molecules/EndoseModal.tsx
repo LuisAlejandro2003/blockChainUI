@@ -22,8 +22,7 @@ export const EndorseModal: React.FC<EndorseModalProps> = ({
   if (!isOpen) return null;
 
   const owners = [
-    { id: '04a0b48f7fa10fe3a7edda02bbfb15391f334dd469da105171e7becca538404bfea43513d3fc141688a0c6986ece49ee646e13d1e896890a4afd4e02749ef59494', name: 'FIRA' },
-    { id: '041adae6e04383f75d734b6fbcdf21e445ae411d332cfaf5c0b7237a89849277192c8faf53fe79cf05af443aa9d9eddcad44b4ca3950be695121c6f8038e82520a', name: 'ALSOL' }
+    { id: '04a0b48f7fa10fe3a7edda02bbfb15391f334dd469da105171e7becca538404bfea43513d3fc141688a0c6986ece49ee646e13d1e896890a4afd4e02749ef59494', name: 'FIRA' }
   ];
 
   const isConfirmValid = confirmText.toLowerCase() === 'confirmar';

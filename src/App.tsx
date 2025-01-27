@@ -7,6 +7,9 @@ import RecoveryPage from "./components/pages/RecoveryPage";
 import AccountCreationPage from "./components/pages/AccountCreationPage";
 import RegisterPage from "./components/pages/RegisterPage";
 import Endose from "./components/pages/Endose";
+import InformationOne from "./components/pages/InformationOne";
+import InformationTwo from "./components/pages/InformationTwo";
+import RecoveryExplanation from "./components/pages/RecoveryExplanation";
 
 const App: React.FC = () => {
   return (
@@ -19,6 +22,9 @@ const App: React.FC = () => {
         <Route path="/firstStep" element={<AccountCreationPage />} />
         <Route path="/secondStep" element={<RegisterPage />} />
         <Route path="/endose" element={<Endose />} />
+        <Route path="/informationOne" element={<InformationOne />} />
+        <Route path="/informationTwo" element={<InformationTwo />} />
+        <Route path="/recoveryExplanation" element={<RecoveryExplanation />} />
       </Routes>
     </Router>
   );

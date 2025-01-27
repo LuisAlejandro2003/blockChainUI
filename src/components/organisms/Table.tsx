@@ -3,9 +3,12 @@ import Modal from "./Modal";
 import { EndorseModal } from "../molecules/EndoseModal";
 import { fetchAllPagares, fetchPagareDetails, updatePagareOwner } from "../services/apiService";
 import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
 
 interface PagareDetail {
-  Record: {
+  _id: string;
+  id: string;
+  obj: {
     Montocredito: string;
     Plazo: string;
     FechaPrimerPago: string;
@@ -21,15 +24,12 @@ interface PagareDetail {
     Owner: string;
     Estatus: string;
   };
-  txId: string;
-  timestamp: string;
-  isDelete: boolean;
 }
 
 const ITEMS_PER_PAGE = 5;
 
 const Table: React.FC = () => {
-  const [data, setData] = useState<any[]>([]); 
+  const [data, setData] = useState<PagareDetail[]>([]); 
   const [modalOpen, setModalOpen] = useState(false); 
   const [selectedDetail, setSelectedDetail] = useState<PagareDetail | null>(null); 
   const [isLoading, setIsLoading] = useState(false); 
@@ -38,6 +38,7 @@ const Table: React.FC = () => {
   const [endorseModalOpen, setEndorseModalOpen] = useState(false);
   const [selectedPagareId, setSelectedPagareId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchData();
@@ -88,6 +89,36 @@ const Table: React.FC = () => {
       const errorMessage = error.message || "Error al actualizar el propietario";
       setError(errorMessage);
     }
+  };
+
+  const handleConfirm = (item: PagareDetail) => {
+    // Función para convertir fecha de DD/MM/YYYY a YYYY-MM-DD
+    const convertDateFormat = (dateStr: string) => {
+      if (!dateStr) return '';
+      const [day, month, year] = dateStr.split('/');
+      return `${year}-${month}-${day}`;
+    };
+
+    // Mapear los datos del pagaré al formato esperado por el formulario
+    const formData = {
+      id: item.id,
+      Owner: item.obj.Owner,
+      Montocredito: item.obj.Montocredito,
+      Plazo: item.obj.Plazo, // Ya no necesitamos split porque viene solo el número
+      PorInteres: item.obj.PorInteres,
+      PordeMoratorios: item.obj.PordeMoratorios,
+      LugarCreacion: item.obj.LugarCreacion,
+      Desembolso: item.obj.Desembolso,
+      NumeroCliente: item.obj.NumeroCliente,
+      CodigoCliente: item.obj.CodigoCliente,
+      HashDocumento: item.obj.HashDocumento,
+      FechaPrimerPago: convertDateFormat(item.obj.FechaPrimerPago),
+      Fecha: convertDateFormat(item.obj.Fecha),
+      FechaVencimiento: convertDateFormat(item.obj.FechaVencimiento)
+    };
+
+    // Navegar al formulario con los datos
+    navigate('/add-credit-agreement', { state: { formData } });
   };
 
   const closeModal = () => {
@@ -154,35 +185,35 @@ const Table: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                currentData.map((item: any, index: number) => (
+                currentData.map((item: PagareDetail, index: number) => (
                   <tr
-                    key={index}
+                    key={item._id}
                     className="group hover:bg-gray-50 transition-colors duration-200"
                   >
                     <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                      {item.Key}
+                      {item.id}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      {item.Record?.Fecha || "N/A"}
+                      {item.obj?.Fecha || "N/A"}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      {item.Record?.LugarCreacion || "N/A"}
+                      {item.obj?.LugarCreacion || "N/A"}
                     </td>
                     <td className="px-6 py-4">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                           ${
-                            item.Record?.Estatus === "Activo"
+                            item.obj?.Estatus?.toLowerCase() === "activo"
                               ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
                           }`}
                       >
-                        {item.Record?.Estatus || "N/A"}
+                        {item.obj?.Estatus || "N/A"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
                       <button
-                        onClick={() => fetchDetails(item.Key)}
+                        onClick={() => fetchDetails(item.id)}
                         className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white
                           bg-yellow-500 hover:bg-yellow-600 rounded-lg transition-colors duration-200
                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500
@@ -192,7 +223,7 @@ const Table: React.FC = () => {
                         Detalles
                       </button>
                       <button
-                        onClick={() => handleEndorse(item.Key)}
+                        onClick={() => handleEndorse(item.id)}
                         className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white
                           bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors duration-200
                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
@@ -200,6 +231,16 @@ const Table: React.FC = () => {
                         disabled={isLoading}
                       >
                         Endosar
+                      </button>
+                      <button
+                        onClick={() => handleConfirm(item)}
+                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white
+                          bg-green-500 hover:bg-green-600 rounded-lg transition-colors duration-200
+                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500
+                          disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                        disabled={isLoading}
+                      >
+                        Confirmar
                       </button>
                     </td>
                   </tr>

@@ -38,8 +38,16 @@ const LoginForm: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await loginUser(email, password);
-      navigate('/dashboard');
+      const loginSuccessful = await loginUser(email, password);
+      if (loginSuccessful) {
+        navigate('/dashboard');
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Credenciales inválidas. Por favor verifica tus datos.',
+        });
+      }
     } catch (error: any) {
       console.error('Error en el inicio de sesión:', error);
       Swal.fire({
@@ -62,7 +70,7 @@ const LoginForm: React.FC = () => {
         <p className="text-muted-foreground">
           No tienes una cuenta?{' '}
           <a 
-            href="/firstStep" 
+            href="/informationOne" 
             className="font-medium text-orange-500 hover:text-orange-600 transition-colors"
           >
             Crear ahora

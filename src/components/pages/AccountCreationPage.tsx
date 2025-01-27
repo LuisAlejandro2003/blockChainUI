@@ -44,7 +44,7 @@ const AccountCreationPage: React.FC = () => {
     preFilledIndices.forEach(index => {
       preFilledWords[index] = seedWords[index];
     });
-    navigate('/secondStep', { state: { seedWords: preFilledWords } });
+    navigate('/informationTwo', { state: { seedWords: preFilledWords } });
   };
 
   if (isLoading) {
