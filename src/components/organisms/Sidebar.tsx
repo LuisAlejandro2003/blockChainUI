@@ -59,9 +59,9 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className="h-screen bg-white border-r border-gray-200 flex flex-col w-64 py-6 px-4">
+    <aside className="fixed top-0 left-0 h-full min-h-screen w-64 bg-white border-r border-gray-200 flex flex-col py-6 px-4 z-30">
       {/* Logo */}
-      <div className="px-2 mb-8">
+      <div className="px-2 mb-8 flex-shrink-0">
         <img 
           src="src\assets\images\logo.png" 
           alt="Logo" 
@@ -73,33 +73,33 @@ const Sidebar: React.FC = () => {
       <nav className="flex-1 space-y-2">
         <SidebarItem
           icon={<FileText size={20} />}
-          text="Ver pagarés"
+          text="Pagarés por confirmar"
           isActive={currentPath === '/dashboard'}
           onClick={() => handleNavigation('/dashboard')}
         />
         <SidebarItem
+          icon={<FileText size={20} />}
+          text="Mis pagarés"
+          isActive={currentPath === '/owned-pagares'}
+          onClick={() => handleNavigation('/owned-pagares')}
+        />
+        <SidebarItem
           icon={<Plus size={20} />}
-          text="Crear pagaré"
+          text="Crear nuevo pagaré"
           isActive={currentPath === '/add-credit-agreement'}
           onClick={() => handleNavigation('/add-credit-agreement')}
         />
-     {/*<SidebarItem
-          icon={<Repeat2 size={20} />}
-          text="Endosar"
-          isActive={currentPath === '/endose'}
-          onClick={() => handleNavigation('/endose')}
-        /> */}
       </nav>
 
       {/* Footer */}
-      <div className="pt-6 mt-6 border-t border-gray-200">
+      <div className="mt-auto pt-6 border-t border-gray-200">
         <SidebarItem
           icon={<LogOut size={20} />}
           text="Cerrar sesión"
           onClick={handleLogout}
         />
       </div>
-    </div>
+    </aside>
   );
 };
 

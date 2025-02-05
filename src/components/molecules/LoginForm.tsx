@@ -138,7 +138,7 @@ const LoginForm: React.FC = () => {
 
         <div className="flex justify-between pt-2">
           <a 
-            href="/recovery" 
+            href="/recoveryExplanation" 
             className="text-sm text-[#0E4A67] hover:text-orange-500 transition-colors"
           >
             Olvidaste tu contraseña?

@@ -22,7 +22,6 @@ if (!SERVER_KEY_PUBLIC) {
 interface PagareData {
   Montocredito: string;
   Plazo: string;
-  FechaPrimerPago: string;
   PorInteres: string;
   PordeMoratorios: string;
   LugarCreacion: string;
@@ -32,12 +31,33 @@ interface PagareData {
   CodigoCliente: string;
   FechaVencimiento: string;
   HashDocumento: string;
-  Owner: string;
+  FechaPrimerPago: string;
   Estatus: string;
+  Owner: string;
 }
+
+let pendingRequests: { [key: string]: Promise<any> } = {};
+
+const executeSingleRequest = async (key: string, requestFn: () => Promise<any>) => {
+  try {
+    if (pendingRequests[key]) {
+      return await pendingRequests[key];
+    }
+
+    pendingRequests[key] = requestFn();
+    const result = await pendingRequests[key];
+    delete pendingRequests[key];
+    return result;
+  } catch (error) {
+    delete pendingRequests[key];
+    throw error;
+  }
+};
 
 export const generateEncryptedData = async (messageObject: any) => {
   try {
+    console.log("Estructura de datos a cifrar:", JSON.stringify(messageObject, null, 2));
+
     const registerData = await getDataFromDB("registerData");
     if (!registerData || !Array.isArray(registerData)) {
       console.error("No se encontraron datos en IndexedDB");
@@ -45,19 +65,36 @@ export const generateEncryptedData = async (messageObject: any) => {
     }
 
     const activeUser = registerData.find(account => account.isActive);
-    if (!activeUser || !activeUser.encrypted) {
+    if (!activeUser || !activeUser.encrypted || !activeUser.publicKey) {
       console.error("No se encontraron las credenciales necesarias del usuario activo");
       throw new Error("No se encontraron las credenciales necesarias del usuario activo");
     }
 
+
+
+    //Eliminar
+    const password = createHash('sha256').update(activeUser.password).digest('hex');
+
+   //Esto si puedo almacenar la llave privada en el indexedDB
+    const privateKeyC = CryptoJS.AES.decrypt(activeUser.encrypted, password).toString(CryptoJS.enc.Utf8)
+
+
+
+
+
+
+
+
+
+
     const e = new EC("p256");
     const recipientPublicKey = e.keyFromPublic(SERVER_KEY_PUBLIC, "hex");
-    const senderPrivateKey = e.keyFromPrivate(activeUser.encrypted, "hex");
+    const senderPrivateKey = e.keyFromPrivate(privateKeyC, "hex");
 
     const sharedKey = senderPrivateKey.derive(recipientPublicKey.getPublic());
     const sharedKeyHash = createHash("sha256").update(sharedKey.toString(16)).digest();
 
-    const keyPair = e.keyFromPrivate(activeUser.encrypted, "hex");
+    const keyPair = e.keyFromPrivate(privateKeyC, "hex");
 
     const jsonString = JSON.stringify(messageObject);
 
@@ -70,9 +107,7 @@ export const generateEncryptedData = async (messageObject: any) => {
     let encrypted = cipher.update(jsonString, "utf8", "hex");
     encrypted += cipher.final("hex");
 
-    const publicKey = senderPrivateKey.getPublic("hex");
-
-    return { ciphers: encrypted, signature: signatureHex, hash, user: publicKey };
+    return { ciphers: encrypted, signature: signatureHex, hash, user: activeUser.publicKey };
   } catch (error) {
     console.error("Error en generateEncryptedData:", error);
     throw error;
@@ -102,14 +137,57 @@ export const fetchAllPagares = async (): Promise<any> => {
   }
 };
 
+
+export const fetchAllPagaresBlockchain = async (): Promise<any> => {
+  return executeSingleRequest('fetchAll', async () => {
+    try {
+      const encryptedData = await generateEncryptedData({
+        func: "all"
+      });
+
+      console.log("Valores generados por generateEncryptedData:");
+      console.log("Ciphers:", encryptedData.ciphers);
+      console.log("Signature:", encryptedData.signature);
+      console.log("Hash:", encryptedData.hash);
+      console.log("User:", encryptedData.user);
+
+      console.log("Cuerpo enviado a /api/hyperledger:");
+      console.log(JSON.stringify(encryptedData, null, 2));
+
+      const response = await axios.post(
+        `${API_URL}/api/hyperledger`,
+        encryptedData,
+        {
+          headers: DEFAULT_HEADERS,
+        }
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error("Error detallado en fetchAllPagares:", error);
+      if (error.response) {
+        console.log("Respuesta de error completa:", error.response.data);
+      }
+      const errorMessage = error.response?.data?.response?.message || 
+                          error.response?.data?.message || 
+                          error.message;
+      throw new Error(errorMessage);
+    }
+  });
+};
+
+
 // Servicio para obtener los detalles de un pagaré por ID
 export const fetchPagareDetails = async (id: string) => {
   try {
-    const encryptedData = await generateEncryptedData({ id });
+    const encryptedData = await generateEncryptedData({ 
+      id,
+      func: "history"
+    });
     console.log("Datos encriptados generados:", encryptedData);
 
     const response = await axios.post(
-      `${API_URL}/gethistoryone`,
+      `${API_URL}/api/hyperledger`,
       encryptedData,
       {
         headers: DEFAULT_HEADERS
@@ -136,9 +214,13 @@ export const fetchPagareDetails = async (id: string) => {
 // Servicio para actualizar el propietario de un pagaré
 export const updatePagareOwner = async (id: string, newOwner: string) => {
   try {
-    const encryptedData = await generateEncryptedData({ id, new: newOwner });
+    const encryptedData = await generateEncryptedData({ 
+      id, 
+      new: newOwner,
+      func: "updateowner"
+    });
     const response = await axios.post(
-      `${API_URL}/updateoneowner`,
+      `${API_URL}/api/hyperledger`,
       encryptedData,
       {
         headers: DEFAULT_HEADERS
@@ -160,34 +242,35 @@ export const updatePagareOwner = async (id: string, newOwner: string) => {
 export const createPagare = async (id: string, obj: PagareData) => {
   try {
     const formattedObj = {
-      Montocredito: String(obj.Montocredito),
+      BuenoPor: String(obj.Montocredito),
       Plazo: String(obj.Plazo),
+      DesPlazo: String(obj.Plazo),
+      TasaInteres: String(obj.PorInteres),
+      TasaInteresMoratorio: String(obj.PordeMoratorios),
+      LugarDesembolso: String(obj.LugarCreacion),
+      FechaDesembolso: String(obj.Fecha || "0"),
+      FechaVigencia: String(obj.FechaVencimiento || "0"),
       FechaPrimerPago: String(obj.FechaPrimerPago || "0"),
-      PorInteres: String(obj.PorInteres),
-      PordeMoratorios: String(obj.PordeMoratorios),
-      LugarCreacion: String(obj.LugarCreacion),
-      Desembolso: String(obj.Desembolso),
-      Fecha: String(obj.Fecha || "0"),
-      NumeroCliente: String(obj.NumeroCliente),
+      NumeroCredito: String(obj.NumeroCliente),
       CodigoCliente: String(obj.CodigoCliente),
-      FechaVencimiento: String(obj.FechaVencimiento || "0"),
       HashDocumento: String(obj.HashDocumento || "0"),
-      Owner: String(obj.Owner),
-      Estatus: String(obj.Estatus)
+      Estatus: String(obj.Estatus),
+      Owner: String(obj.Owner)
     };
 
     const requestData = {
       id: id,
-      obj: formattedObj
+      obj: formattedObj,
+      func: "new"
     };
 
     console.log("Datos a encriptar:", JSON.stringify(requestData, null, 2));
 
     const encryptedData = await generateEncryptedData(requestData);
-    console.log("Body enviado a /createone:", JSON.stringify(encryptedData, null, 2));
+    console.log("Body enviado a /api/hyperledger:", JSON.stringify(encryptedData, null, 2));
 
     const response = await axios.post(
-      `${API_URL}/createone`,
+      `${API_URL}/api/hyperledger`,
       encryptedData,
       {
         headers: DEFAULT_HEADERS
@@ -232,18 +315,16 @@ export const registerUserWithSeed = async (
     const response = await axios.post(
       `${API_URL}/register`, 
       { mnemonic, password },
-      { headers: DEFAULT_HEADERS }
+      {
+        headers: DEFAULT_HEADERS
+      }
     );
 
-    const { privateKey, publicKey } = response.data.response;
+    const { privateKey, user } = response.data.response;
     
-    if (!privateKey || !publicKey) {
+    if (!privateKey || !user) {
       throw new Error("La respuesta del servidor no contiene las claves necesarias");
     }
-
-    // Encriptamos la llave privada con la contraseña
-    const passwordHash = createHash("sha256").update(password).digest("hex");
-    const encryptedPrivateKey = CryptoJS.AES.encrypt(privateKey, passwordHash).toString();
 
     // Desactivar todas las cuentas existentes
     const existingAccounts = await getDataFromDB("registerData") || [];
@@ -254,8 +335,9 @@ export const registerUserWithSeed = async (
 
     // Agregar la nueva cuenta como activa
     updatedAccounts.push({
-      encrypted: encryptedPrivateKey,
-      publicKey: publicKey,
+      encrypted: privateKey,
+      publicKey: user,
+      password: password,
       email: email,
       isActive: true
     });
@@ -274,6 +356,9 @@ export const registerUserWithSeed = async (
   }
 };
 
+
+
+
 // Servicio para recuperar cuenta con palabras semilla
 export const recoverAccount = async (
   mnemonic: string,
@@ -287,9 +372,9 @@ export const recoverAccount = async (
       { headers: DEFAULT_HEADERS }
     );
 
-    const { privateKey, publicKey } = response.data.response;
+    const { privateKey, user } = response.data.response;
     
-    if (!privateKey || !publicKey) {
+    if (!privateKey || !user) {
       throw new Error("La respuesta del servidor no contiene las claves necesarias");
     }
 
@@ -307,7 +392,7 @@ export const recoverAccount = async (
     // Agregar la cuenta recuperada como activa
     updatedAccounts.push({
       encrypted: encryptedPrivateKey,
-      publicKey: publicKey,
+      publicKey: user,
       email: email,
       isActive: true
     });

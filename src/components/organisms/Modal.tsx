@@ -22,16 +22,17 @@ const Modal: React.FC<ModalProps> = ({
 
   const fieldLabels: { [key: string]: string } = {
     txId: "ID de Transacción",
-    Montocredito: "Bueno por",
+    BuenoPor: "Bueno por",
     Plazo: "Plazo",
+    DesPlazo: "Descripción del Plazo",
+    TasaInteres: "Tasa de interés (%)",
+    TasaInteresMoratorio: "Tasa moratoria (%)",
+    LugarDesembolso: "Lugar de desembolso",
+    FechaDesembolso: "Fecha de desembolso",
+    FechaVigencia: "Fecha de vigencia",
     FechaPrimerPago: "Fecha del primer pago",
-    PorInteres: "Tasa de interés (%)",
-    PordeMoratorios: "Tasa moratoria (%)",
-    LugarCreacion: "Lugar de creación",
-    Fecha: "Fecha de creación",
-    NumeroCliente: "Número del crédito",
+    NumeroCredito: "Número del crédito",
     CodigoCliente: "Código del cliente",
-    FechaVencimiento: "Fecha de vencimiento",
     HashDocumento: "Hash del documento",
     Owner: "Pagar a la orden de",
     Estatus: "Estatus",
@@ -40,11 +41,11 @@ const Modal: React.FC<ModalProps> = ({
   const formatValue = (key: string, value: string | number | undefined) => {
     if (!value || value === "N/A") return "N/A";
 
-    if (key === "Montocredito") {
+    if (key === "BuenoPor") {
       return `$${value}`;
     }
 
-    if (key === "PorInteres" || key === "PordeMoratorios") {
+    if (key === "TasaInteres" || key === "TasaInteresMoratorio") {
       return `${value}%`;
     }
 
@@ -121,7 +122,7 @@ const Modal: React.FC<ModalProps> = ({
 
             {/* Resto de campos */}
             {Object.keys(fieldLabels).map((key) => {
-              if (key === "FechaVencimiento" || key === "HashDocumento" || key === "txId" || key === "Owner") {
+              if (key === "FechaVigencia" || key === "HashDocumento" || key === "txId" || key === "Owner") {
                 return null;
               }
 
@@ -144,14 +145,14 @@ const Modal: React.FC<ModalProps> = ({
               );
             })}
 
-            {/* Fecha de Vencimiento y Hash del Documento en la misma fila */}
+            {/* Fecha de Vigencia y Hash del Documento en la misma fila */}
             <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">
-                  {fieldLabels["FechaVencimiento"]}
+                  {fieldLabels["FechaVigencia"]}
                 </label>
                 <div className="bg-gray-50 px-4 py-2.5 text-gray-800 text-sm rounded-lg border border-gray-200">
-                  {formatValue("FechaVencimiento", data.Record?.["FechaVencimiento"])}
+                  {formatValue("FechaVigencia", data.Record?.["FechaVigencia"])}
                 </div>
               </div>
               <div>

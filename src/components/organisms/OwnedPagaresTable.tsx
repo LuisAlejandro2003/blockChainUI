@@ -1,84 +1,106 @@
 import React, { useState, useEffect } from "react";
+import { Loader2, ChevronLeft, ChevronRight, FileText, ArrowRightLeft } from "lucide-react";
 import Modal from "./Modal";
 import { EndorseModal } from "../molecules/EndoseModal";
-import { fetchAllPagares, fetchPagareDetails, updatePagareOwner } from "../services/apiService";
-import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
+import { fetchAllPagaresBlockchain, fetchPagareDetails, updatePagareOwner } from "../services/apiService";
 
 interface PagareDetail {
-  _id: string;
-  id: string;
-  obj: {
-    Montocredito: string;
+  Record: {
+    BuenoPor: string;
     Plazo: string;
+    DesPlazo: string;
+    TasaInteres: string;
+    TasaInteresMoratorio: string;
+    LugarDesembolso: string;
+    FechaDesembolso: string;
+    FechaVigencia: string;
     FechaPrimerPago: string;
-    PorInteres: string;
-    PordeMoratorios: string;
-    LugarCreacion: string;
-    Desembolso: string;
-    Fecha: string;
-    NumeroCliente: string;
+    NumeroCredito: string;
     CodigoCliente: string;
-    FechaVencimiento: string;
     HashDocumento: string;
     Owner: string;
     Estatus: string;
   };
+  txId: string;
+  timestamp: string;
+  isDelete: boolean;
 }
 
 const ITEMS_PER_PAGE = 5;
 
-const Table: React.FC = () => {
-  const [data, setData] = useState<PagareDetail[]>([]); 
-  const [modalOpen, setModalOpen] = useState(false); 
-  const [selectedDetail, setSelectedDetail] = useState<PagareDetail | null>(null); 
-  const [isLoading, setIsLoading] = useState(false); 
-  const [error, setError] = useState<string | null>(null); 
-  const [fondeador, setFondeador] = useState("Ninguno"); 
+const OwnedPagaresTable: React.FC = () => {
+  const [data, setData] = useState<any[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedDetail, setSelectedDetail] = useState<PagareDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fondeador, setFondeador] = useState("Ninguno");
   const [endorseModalOpen, setEndorseModalOpen] = useState(false);
   const [selectedPagareId, setSelectedPagareId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchData();
+    let isSubscribed = true;
+
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetchAllPagaresBlockchain();
+        if (isSubscribed) {
+          console.log("Respuesta de fetchAllPagaresBlockchain:", response);
+          setData(response || []);
+          setError(null);
+        }
+      } catch (err: any) {
+        if (isSubscribed) {
+          console.error("Error al cargar los pagarés:", err);
+          setError(err.message || "Error al cargar los datos.");
+          setData([]);
+        }
+      } finally {
+        if (isSubscribed) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isSubscribed = false;
+      setData([]);
+      setError(null);
+      setSelectedDetail(null);
+      setModalOpen(false);
+      setEndorseModalOpen(false);
+      setSelectedPagareId(null);
+    };
   }, []);
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetchAllPagares();
-      console.log("Respuesta de fetchAllPagares:", response);
-      setData(response || []);
-    } catch (err: any) {
-      setError(err.message || "Error al cargar los datos.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const fetchDetails = async (id: string) => {
+    let isSubscribed = true;
     setIsLoading(true);
+    
     try {
-      const detail = data.find(item => item.id === id);
-      if (!detail) {
-        throw new Error("No se encontró el pagaré");
+      const detail = await fetchPagareDetails(id);
+      if (isSubscribed) {
+        console.log("Detalles del pagaré:", detail);
+        setSelectedDetail(detail);
+        setModalOpen(true);
       }
-      
-      // Transformar los datos al formato que espera el modal
-      const formattedDetail = {
-        txId: detail._id,
-        Record: detail.obj
-      };
-      
-      console.log("Detalles del pagaré:", formattedDetail);
-      setSelectedDetail(formattedDetail as any);
-      setModalOpen(true);
     } catch (err: any) {
-      setError(err.message || "Error al cargar los detalles.");
+      if (isSubscribed) {
+        setError(err.message || "Error al cargar los detalles.");
+      }
     } finally {
-      setIsLoading(false);
+      if (isSubscribed) {
+        setIsLoading(false);
+      }
     }
+
+    return () => {
+      isSubscribed = false;
+    };
   };
 
   const handleEndorse = (id: string) => {
@@ -89,46 +111,25 @@ const Table: React.FC = () => {
   const handleUpdateOwner = async (newOwner: string) => {
     if (!selectedPagareId) return;
 
+    let isSubscribed = true;
     try {
       await updatePagareOwner(selectedPagareId, newOwner);
-      // Refrescar la lista de pagarés
-      await fetchData();
-      setEndorseModalOpen(false);
-      setSelectedPagareId(null);
+      if (isSubscribed) {
+        const response = await fetchAllPagaresBlockchain();
+        setData(response || []);
+        setEndorseModalOpen(false);
+        setSelectedPagareId(null);
+      }
     } catch (error: any) {
-      const errorMessage = error.message || "Error al actualizar el propietario";
-      setError(errorMessage);
+      if (isSubscribed) {
+        const errorMessage = error.message || "Error al actualizar el propietario";
+        setError(errorMessage);
+      }
     }
-  };
 
-  const handleConfirm = (item: PagareDetail) => {
-    // Función para convertir fecha de DD/MM/YYYY a YYYY-MM-DD
-    const convertDateFormat = (dateStr: string) => {
-      if (!dateStr) return '';
-      const [day, month, year] = dateStr.split('/');
-      return `${year}-${month}-${day}`;
+    return () => {
+      isSubscribed = false;
     };
-
-    // Mapear los datos del pagaré al formato esperado por el formulario
-    const formData = {
-      id: item.id,
-      Owner: item.obj.Owner,
-      Montocredito: item.obj.Montocredito,
-      Plazo: item.obj.Plazo.split(' ')[0], // Extraer solo el número del plazo
-      PorInteres: item.obj.PorInteres,
-      PordeMoratorios: item.obj.PordeMoratorios,
-      LugarCreacion: item.obj.LugarCreacion,
-      Desembolso: item.obj.Desembolso,
-      NumeroCliente: item.obj.NumeroCliente,
-      CodigoCliente: item.obj.CodigoCliente,
-      HashDocumento: item.obj.HashDocumento,
-      FechaPrimerPago: convertDateFormat(item.obj.FechaPrimerPago),
-      Fecha: convertDateFormat(item.obj.Fecha),
-      FechaVencimiento: convertDateFormat(item.obj.FechaVencimiento)
-    };
-
-    // Navegar al formulario con los datos
-    navigate('/add-credit-agreement', { state: { formData } });
   };
 
   const closeModal = () => {
@@ -174,7 +175,7 @@ const Table: React.FC = () => {
                   No. Pagaré
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                  Fecha
+                  Fecha de desembolso
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
                   Ubicación
@@ -195,35 +196,35 @@ const Table: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                currentData.map((item: PagareDetail, index: number) => (
+                currentData.map((item: any, index: number) => (
                   <tr
-                    key={item._id}
+                    key={index}
                     className="group hover:bg-gray-50 transition-colors duration-200"
                   >
                     <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                      {item.id}
+                      {item.Key}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      {item.obj?.Fecha || "N/A"}
+                      {item.Record?.FechaDesembolso || "N/A"}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      {item.obj?.LugarCreacion || "N/A"}
+                      {item.Record?.LugarDesembolso || "N/A"}
                     </td>
                     <td className="px-6 py-4">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                           ${
-                            item.obj?.Estatus?.toLowerCase() === "activo"
+                            item.Record?.Estatus === "Activo"
                               ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
                           }`}
                       >
-                        {item.obj?.Estatus || "N/A"}
+                        {item.Record?.Estatus || "N/A"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
                       <button
-                        onClick={() => fetchDetails(item.id)}
+                        onClick={() => fetchDetails(item.Key)}
                         className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white
                           bg-yellow-500 hover:bg-yellow-600 rounded-lg transition-colors duration-200
                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500
@@ -233,14 +234,14 @@ const Table: React.FC = () => {
                         Detalles
                       </button>
                       <button
-                        onClick={() => handleConfirm(item)}
+                        onClick={() => handleEndorse(item.Key)}
                         className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white
-                          bg-green-500 hover:bg-green-600 rounded-lg transition-colors duration-200
-                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500
+                          bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors duration-200
+                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
                           disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                         disabled={isLoading}
                       >
-                        Confirmar
+                        Endosar
                       </button>
                     </td>
                   </tr>
@@ -352,4 +353,4 @@ const Table: React.FC = () => {
   );
 };
 
-export default Table;
+export default OwnedPagaresTable;

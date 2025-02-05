@@ -12,8 +12,7 @@ const DashboardPage: React.FC = () => {
 
       {/* Main content */}
       <div className="flex flex-col flex-1">
-        {/* Navbar */}
-        <Navbar />
+      
 
         {/* Page content */}
         <div className="p-6 ">
