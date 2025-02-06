@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Repeat2, LogOut, Plus } from 'lucide-react';
+import { FileText, LogOut } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { logoutUser } from '../services/apiService';
 import Swal from 'sweetalert2';
@@ -83,12 +83,7 @@ const Sidebar: React.FC = () => {
           isActive={currentPath === '/owned-pagares'}
           onClick={() => handleNavigation('/owned-pagares')}
         />
-        <SidebarItem
-          icon={<Plus size={20} />}
-          text="Crear nuevo pagaré"
-          isActive={currentPath === '/add-credit-agreement'}
-          onClick={() => handleNavigation('/add-credit-agreement')}
-        />
+        
       </nav>
 
       {/* Footer */}

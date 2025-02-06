@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import OwnedPagaresTable from "../organisms/OwnedPagaresTable";
 
 const OwnedPagaresPage: React.FC = () => {

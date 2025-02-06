@@ -1,7 +1,6 @@
-// src/components/pages/DashboardPage.tsx
+
 import React from "react";
 import Sidebar from "../organisms/Sidebar";
-import Navbar from "../organisms/Navbar";
 import Table from "../organisms/Table";
 
 const DashboardPage: React.FC = () => {

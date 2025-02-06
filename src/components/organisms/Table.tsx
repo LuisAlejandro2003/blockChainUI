@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import Modal from "./Modal";
+import PagareDetailsModal from "./PagareDetailsModal";
 import { EndorseModal } from "../molecules/EndoseModal";
-import { fetchAllPagares, fetchPagareDetails, updatePagareOwner } from "../services/apiService";
+import { fetchAllPagares, updatePagareOwner } from "../services/apiService";
 import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 
@@ -34,7 +34,6 @@ const Table: React.FC = () => {
   const [selectedDetail, setSelectedDetail] = useState<PagareDetail | null>(null); 
   const [isLoading, setIsLoading] = useState(false); 
   const [error, setError] = useState<string | null>(null); 
-  const [fondeador, setFondeador] = useState("Ninguno"); 
   const [endorseModalOpen, setEndorseModalOpen] = useState(false);
   const [selectedPagareId, setSelectedPagareId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -65,14 +64,7 @@ const Table: React.FC = () => {
         throw new Error("No se encontró el pagaré");
       }
       
-      // Transformar los datos al formato que espera el modal
-      const formattedDetail = {
-        txId: detail._id,
-        Record: detail.obj
-      };
-      
-      console.log("Detalles del pagaré:", formattedDetail);
-      setSelectedDetail(formattedDetail as any);
+      setSelectedDetail(detail);
       setModalOpen(true);
     } catch (err: any) {
       setError(err.message || "Error al cargar los detalles.");
@@ -81,10 +73,6 @@ const Table: React.FC = () => {
     }
   };
 
-  const handleEndorse = (id: string) => {
-    setSelectedPagareId(id);
-    setEndorseModalOpen(true);
-  };
 
   const handleUpdateOwner = async (newOwner: string) => {
     if (!selectedPagareId) return;
@@ -131,11 +119,7 @@ const Table: React.FC = () => {
     navigate('/add-credit-agreement', { state: { formData } });
   };
 
-  const closeModal = () => {
-    setModalOpen(false);
-    setSelectedDetail(null);
-    setFondeador("Ninguno");
-  };
+
 
   // Paginación
   const totalPages = Math.ceil(data.length / ITEMS_PER_PAGE);
@@ -195,7 +179,7 @@ const Table: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                currentData.map((item: PagareDetail, index: number) => (
+                currentData.map((item: PagareDetail) => (
                   <tr
                     key={item._id}
                     className="group hover:bg-gray-50 transition-colors duration-200"
@@ -329,13 +313,14 @@ const Table: React.FC = () => {
         )}
       </div>
 
-      {/* Modal de Detalles */}
-      <Modal
+      {/* Reemplazar el Modal anterior por el nuevo PagareDetailsModal */}
+      <PagareDetailsModal
         isOpen={modalOpen}
-        onClose={closeModal}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedDetail(null);
+        }}
         data={selectedDetail}
-        fondeador={fondeador}
-        setFondeador={setFondeador}
       />
 
       {/* Modal de Endoso */}

@@ -40,7 +40,7 @@ let pendingRequests: { [key: string]: Promise<any> } = {};
 
 const executeSingleRequest = async (key: string, requestFn: () => Promise<any>) => {
   try {
-    if (pendingRequests[key]) {
+    if (Object.prototype.hasOwnProperty.call(pendingRequests, key)) {
       return await pendingRequests[key];
     }
 
@@ -372,30 +372,46 @@ export const recoverAccount = async (
       { headers: DEFAULT_HEADERS }
     );
 
-    const { privateKey, user } = response.data.response;
+    // Extraer privateKey y publicKey de response.response
+    const { privateKey, publicKey } = response.data.response;
     
-    if (!privateKey || !user) {
+    if (!privateKey || !publicKey) {
       throw new Error("La respuesta del servidor no contiene las claves necesarias");
     }
 
-    // Encriptamos la llave privada con la nueva contraseña
-    const passwordHash = createHash("sha256").update(newpassword).digest("hex");
-    const encryptedPrivateKey = CryptoJS.AES.encrypt(privateKey, passwordHash).toString();
-
-    // Desactivar todas las cuentas existentes
+    // Obtener las cuentas existentes
     const existingAccounts = await getDataFromDB("registerData") || [];
+    
+    // Buscar si existe una cuenta con el mismo publicKey
+    const accountIndex = existingAccounts.findIndex(
+      (account: any) => account.publicKey === publicKey
+    );
+
+    // Desactivar todas las cuentas
     const updatedAccounts = existingAccounts.map((account: any) => ({
       ...account,
       isActive: false
     }));
 
-    // Agregar la cuenta recuperada como activa
-    updatedAccounts.push({
-      encrypted: encryptedPrivateKey,
-      publicKey: user,
-      email: email,
-      isActive: true
-    });
+    if (accountIndex !== -1) {
+      // Actualizar la cuenta existente
+      updatedAccounts[accountIndex] = {
+        ...updatedAccounts[accountIndex],
+        encrypted: privateKey,
+        password: newpassword,
+        email: email,
+        isActive: true
+      };
+    } else {
+      // Si no existe, crear una nueva cuenta
+      updatedAccounts.push({
+        encrypted: privateKey,
+        publicKey: publicKey,
+        password: newpassword,
+        email: email,
+        isActive: true
+      });
+    }
 
     await saveDataToDB("registerData", updatedAccounts);
     console.log("Cuenta recuperada y activada");

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Loader2, ChevronLeft, ChevronRight, FileText, ArrowRightLeft } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import Modal from "./Modal";
 import { EndorseModal } from "../molecules/EndoseModal";
 import { fetchAllPagaresBlockchain, fetchPagareDetails, updatePagareOwner } from "../services/apiService";
@@ -111,25 +111,16 @@ const OwnedPagaresTable: React.FC = () => {
   const handleUpdateOwner = async (newOwner: string) => {
     if (!selectedPagareId) return;
 
-    let isSubscribed = true;
     try {
       await updatePagareOwner(selectedPagareId, newOwner);
-      if (isSubscribed) {
-        const response = await fetchAllPagaresBlockchain();
-        setData(response || []);
-        setEndorseModalOpen(false);
-        setSelectedPagareId(null);
-      }
+      const response = await fetchAllPagaresBlockchain();
+      setData(response || []);
+      setEndorseModalOpen(false);
+      setSelectedPagareId(null);
     } catch (error: any) {
-      if (isSubscribed) {
-        const errorMessage = error.message || "Error al actualizar el propietario";
-        setError(errorMessage);
-      }
+      const errorMessage = error.message || "Error al actualizar el propietario";
+      setError(errorMessage);
     }
-
-    return () => {
-      isSubscribed = false;
-    };
   };
 
   const closeModal = () => {

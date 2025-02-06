@@ -137,10 +137,13 @@ const AddCreditAgreementForm: React.FC = () => {
     }
   }, [receivedData]);
 
-  const inputClasses = `
+
+
+  const readOnlyInputClasses = `
     w-full px-4 py-2.5 rounded-lg border border-gray-300
-    focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500
-    bg-white text-gray-900 transition-colors duration-200
+    bg-gray-100 text-gray-900 transition-colors duration-200
+    focus:outline-none focus:ring-0 focus:border-gray-300
+    cursor-default appearance-none
   `;
 
   const errorClasses = "mt-1 text-sm text-red-600";
@@ -173,10 +176,11 @@ const AddCreditAgreementForm: React.FC = () => {
                   id="id"
                   name="id"
                   type="text"
-                  className={inputClasses}
+                  className={readOnlyInputClasses}
                   value={formik.values.id}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
+                  readOnly
                 />
                 {formik.touched.id && formik.errors.id && (
                   <div className={errorClasses}>{formik.errors.id}</div>
@@ -191,10 +195,10 @@ const AddCreditAgreementForm: React.FC = () => {
                   id="Owner"
                   name="Owner"
                   type="text"
-                  className={`${inputClasses} bg-gray-100`}
+                  className={readOnlyInputClasses}
                   value="Alsol Contigo, S.A. de C.V., SOFOM, E.N.R."
                   readOnly
-                  onChange={(e) => {
+                  onChange={() => {
                     formik.setFieldValue('Owner', '041adae6e04383f75d734b6fbcdf21e445ae411d332cfaf5c0b7237a89849277192c8faf53fe79cf05af443aa9d9eddcad44b4ca3950be695121c6f8038e82520a');
                   }}
                 />
@@ -213,10 +217,11 @@ const AddCreditAgreementForm: React.FC = () => {
                 id="Montocredito"
                 name="Montocredito"
                 type="number"
-                className={inputClasses}
+                className={readOnlyInputClasses}
                 value={formik.values.Montocredito}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                readOnly
               />
               {formik.touched.Montocredito && formik.errors.Montocredito && (
                 <div className={errorClasses}>{formik.errors.Montocredito}</div>
@@ -231,10 +236,11 @@ const AddCreditAgreementForm: React.FC = () => {
                 id="PorInteres"
                 name="PorInteres"
                 type="number"
-                className={inputClasses}
+                className={readOnlyInputClasses}
                 value={formik.values.PorInteres}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                readOnly
               />
               {formik.touched.PorInteres && formik.errors.PorInteres && (
                 <div className={errorClasses}>{formik.errors.PorInteres}</div>
@@ -249,10 +255,11 @@ const AddCreditAgreementForm: React.FC = () => {
                 id="PordeMoratorios"
                 name="PordeMoratorios"
                 type="number"
-                className={inputClasses}
+                className={readOnlyInputClasses}
                 value={formik.values.PordeMoratorios}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                readOnly
               />
               {formik.touched.PordeMoratorios && formik.errors.PordeMoratorios && (
                 <div className={errorClasses}>{formik.errors.PordeMoratorios}</div>
@@ -269,10 +276,11 @@ const AddCreditAgreementForm: React.FC = () => {
                   id="Plazo"
                   name="Plazo"
                   type="number"
-                  className={inputClasses}
+                  className={readOnlyInputClasses}
                   value={formik.values.Plazo}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
+                  readOnly
                 />
                 {formik.touched.Plazo && formik.errors.Plazo && (
                   <div className={errorClasses}>{formik.errors.Plazo}</div>
@@ -286,7 +294,8 @@ const AddCreditAgreementForm: React.FC = () => {
                   id="periodicidad"
                   value={plazoPeriodicidad}
                   onChange={(e) => setPlazoPeriodicidad(e.target.value)}
-                  className={inputClasses}
+                  className={readOnlyInputClasses}
+                  disabled
                 >
                   <option value="semanal">Semanal</option>
                   <option value="catorcenal">Catorcenal</option>
@@ -305,10 +314,11 @@ const AddCreditAgreementForm: React.FC = () => {
                 name="NumeroCliente"
                 type="text"
                 pattern="\d*"
-                className={inputClasses}
+                className={readOnlyInputClasses}
                 value={formik.values.NumeroCliente}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                readOnly
               />
               {formik.touched.NumeroCliente && formik.errors.NumeroCliente && (
                 <div className={errorClasses}>{formik.errors.NumeroCliente}</div>
@@ -324,10 +334,11 @@ const AddCreditAgreementForm: React.FC = () => {
                 name="CodigoCliente"
                 type="text"
                 pattern="\d*"
-                className={inputClasses}
+                className={readOnlyInputClasses}
                 value={formik.values.CodigoCliente}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                readOnly
               />
               {formik.touched.CodigoCliente && formik.errors.CodigoCliente && (
                 <div className={errorClasses}>{formik.errors.CodigoCliente}</div>
@@ -343,10 +354,11 @@ const AddCreditAgreementForm: React.FC = () => {
                 id="HashDocumento"
                 name="HashDocumento"
                 type="text"
-                className={inputClasses}
+                className={readOnlyInputClasses}
                 value={formik.values.HashDocumento}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                readOnly
               />
               {formik.touched.HashDocumento && formik.errors.HashDocumento && (
                 <div className={errorClasses}>{formik.errors.HashDocumento}</div>
@@ -362,10 +374,11 @@ const AddCreditAgreementForm: React.FC = () => {
                 id="LugarCreacion"
                 name="LugarCreacion"
                 type="text"
-                className={inputClasses}
+                className={readOnlyInputClasses}
                 value={formik.values.LugarCreacion}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                readOnly
               />
               {formik.touched.LugarCreacion && formik.errors.LugarCreacion && (
                 <div className={errorClasses}>{formik.errors.LugarCreacion}</div>
@@ -380,7 +393,7 @@ const AddCreditAgreementForm: React.FC = () => {
                 id="Fecha"
                 name="Fecha"
                 type="date"
-                className={inputClasses}
+                className={readOnlyInputClasses}
                 value={formik.values.Fecha}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
@@ -397,10 +410,11 @@ const AddCreditAgreementForm: React.FC = () => {
                 id="FechaPrimerPago"
                 name="FechaPrimerPago"
                 type="date"
-                className={inputClasses}
+                className={readOnlyInputClasses}
                 value={formik.values.FechaPrimerPago}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                readOnly
               />
             </div>
 
@@ -412,10 +426,11 @@ const AddCreditAgreementForm: React.FC = () => {
                 id="FechaVencimiento"
                 name="FechaVencimiento"
                 type="date"
-                className={inputClasses}
+                className={readOnlyInputClasses}
                 value={formik.values.FechaVencimiento}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                readOnly
               />
             </div>
           </div>

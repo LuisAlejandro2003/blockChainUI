@@ -1,47 +1,66 @@
-import React from "react";
-import { X, FileText } from "lucide-react";
+import React from 'react';
+import { X, FileText } from 'lucide-react';
 
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  data: any;
-  fondeador: string;
-  setFondeador: (value: string) => void;
+interface PagareDetail {
+  _id: string;
+  id: string;
+  obj: {
+    Montocredito: string;
+    Plazo: string;
+    FechaPrimerPago: string;
+    PorInteres: string;
+    PordeMoratorios: string;
+    LugarCreacion: string;
+    Desembolso: string;
+    Fecha: string;
+    NumeroCliente: string;
+    CodigoCliente: string;
+    FechaVencimiento: string;
+    HashDocumento: string;
+    Owner: string;
+    Estatus: string;
+  };
 }
 
-const Modal: React.FC<ModalProps> = ({
+interface PagareDetailsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  data: PagareDetail | null;
+}
+
+const PagareDetailsModal: React.FC<PagareDetailsModalProps> = ({
   isOpen,
   onClose,
-  data
+  data,
 }) => {
   if (!isOpen || !data) return null;
 
   const fieldLabels: { [key: string]: string } = {
-    txId: "ID de Transacción",
-    BuenoPor: "Bueno por",
+    id: "ID del Pagaré",
+    Montocredito: "Monto del Crédito",
     Plazo: "Plazo",
-    DesPlazo: "Descripción del Plazo",
-    TasaInteres: "Tasa de interés (%)",
-    TasaInteresMoratorio: "Tasa moratoria (%)",
-    LugarDesembolso: "Lugar de desembolso",
-    FechaDesembolso: "Fecha de desembolso",
-    FechaVigencia: "Fecha de vigencia",
-    FechaPrimerPago: "Fecha del primer pago",
-    NumeroCredito: "Número del crédito",
-    CodigoCliente: "Código del cliente",
-    HashDocumento: "Hash del documento",
+    FechaPrimerPago: "Fecha del Primer Pago",
+    PorInteres: "Tasa de Interés (%)",
+    PordeMoratorios: "Tasa Moratoria (%)",
+    LugarCreacion: "Lugar de Creación",
+    Desembolso: "Desembolso",
+    Fecha: "Fecha de Creación",
+    NumeroCliente: "Número de Cliente",
+    CodigoCliente: "Código de Cliente",
+    FechaVencimiento: "Fecha de Vencimiento",
+    HashDocumento: "Hash del Documento",
     Owner: "Pagar a la orden de",
-    Estatus: "Estatus",
+    Estatus: "Estatus"
   };
 
-  const formatValue = (key: string, value: string | number | undefined) => {
+  const formatValue = (key: string, value: string) => {
     if (!value || value === "N/A") return "N/A";
 
-    if (key === "BuenoPor") {
+    if (key === "Montocredito" || key === "Desembolso") {
       return `$${value}`;
     }
 
-    if (key === "TasaInteres" || key === "TasaInteresMoratorio") {
+    if (key === "PorInteres" || key === "PordeMoratorios") {
       return `${value}%`;
     }
 
@@ -94,26 +113,26 @@ const Modal: React.FC<ModalProps> = ({
             <div className="flex items-center justify-between mb-6">
               <div className="text-sm text-gray-500">Estado</div>
               <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                data.Record?.Estatus === "Activo"
+                data.obj.Estatus?.toLowerCase() === "activo" 
                   ? "bg-green-50 text-green-700" 
                   : "bg-red-50 text-red-700"
               }`}>
-                {data.Record?.Estatus || "N/A"}
+                {data.obj.Estatus}
               </div>
             </div>
 
-            {/* ID de Transacción y Owner */}
+            {/* ID y Owner */}
             <div className="space-y-4">
               <div>
-                <div className="text-sm text-gray-500 mb-1">{fieldLabels["txId"]}</div>
+                <div className="text-sm text-gray-500 mb-1">{fieldLabels["id"]}</div>
                 <div className="font-mono text-sm text-gray-900 break-all">
-                  {data.txId}
+                  {data.id}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-gray-500 mb-1">{fieldLabels["Owner"]}</div>
                 <div className="text-sm text-gray-900">
-                  {formatValue("Owner", data.Record?.Owner)}
+                  {formatValue("Owner", data.obj.Owner)}
                 </div>
               </div>
             </div>
@@ -123,16 +142,16 @@ const Modal: React.FC<ModalProps> = ({
 
             {/* Main Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {Object.entries(fieldLabels).map(([key, label]) => {
-                if (key === "Owner" || key === "HashDocumento" || key === "txId" || key === "Estatus") return null;
+              {Object.entries(data.obj).map(([key, value]) => {
+                if (key === "Owner" || key === "HashDocumento" || key === "Estatus") return null;
 
                 return (
                   <div key={key}>
                     <div className="text-sm text-gray-500 mb-1">
-                      {label}
+                      {fieldLabels[key]}
                     </div>
                     <div className="text-sm text-gray-900 font-medium">
-                      {formatValue(key, data.Record?.[key])}
+                      {formatValue(key, value)}
                     </div>
                   </div>
                 );
@@ -145,7 +164,7 @@ const Modal: React.FC<ModalProps> = ({
                 {fieldLabels["HashDocumento"]}
               </div>
               <div className="font-mono text-sm text-gray-900 break-all">
-                {formatValue("HashDocumento", data.Record?.HashDocumento)}
+                {formatValue("HashDocumento", data.obj.HashDocumento)}
               </div>
             </div>
           </div>
@@ -166,4 +185,4 @@ const Modal: React.FC<ModalProps> = ({
   );
 };
 
-export default Modal;
+export default PagareDetailsModal;

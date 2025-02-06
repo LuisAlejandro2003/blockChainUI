@@ -1,6 +1,12 @@
 import React from 'react';
 import { Button2 } from '../atoms/Button2';
 import { AlertTriangle } from 'lucide-react';
+import { useActiveSession } from '../../hooks/useActiveSession';
+
+interface Owner {
+  id: string;
+  name: string;
+}
 
 interface EndorseModalProps {
   isOpen: boolean;
@@ -18,16 +24,54 @@ export const EndorseModal: React.FC<EndorseModalProps> = ({
   const [newOwner, setNewOwner] = React.useState('');
   const [confirmText, setConfirmText] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
+  const { activePublicKey } = useActiveSession();
 
   if (!isOpen) return null;
 
-  const owners = [
-    { id: '0416bea59b073b3e7620c8c9c319e037b63af240a2223ba7074f8efa681cb88b454638505f8f4ed42c539f89fa481c1d59e2297fcfe0e2cbd0a2544b0fedc212bc', name: 'FIRA' },
-    { id: '0432db7c14fee467ca7389adf11d5c05daf4aafeb2cad52202902fbe3e3ac70b991816f9197f97cd56e2f30c573c5e7f90752b1b7418bd9d18f7bb184a9bd0426e', name: 'ALSOL' }
+  // Lista de owners disponibles - en el futuro esto podría venir de una API o configuración
+  const allOwners: Owner[] = [
+    { 
+      id: '0416bea59b073b3e7620c8c9c319e037b63af240a2223ba7074f8efa681cb88b454638505f8f4ed42c539f89fa481c1d59e2297fcfe0e2cbd0a2544b0fedc212bc', 
+      name: 'FIRA' 
+    },
+    {
+      id: '0432db7c14fee467ca7389adf11d5c05daf4aafeb2cad52202902fbe3e3ac70b991816f9197f97cd56e2f30c573c5e7f90752b1b7418bd9d18f7bb184a9bd0426e',
+      name: 'Alsol Contigo, S.A. de C.V., SOFOM, E.N.R.'
+    }
   ];
+
+  // Filtrar los owners disponibles excluyendo al usuario activo
+  const availableOwners = allOwners.filter(owner => owner.id !== activePublicKey);
 
   const isConfirmValid = confirmText.toLowerCase() === 'confirmar';
   const canSubmit = newOwner && isConfirmValid && !isLoading;
+
+  // Si no hay owners disponibles para endosar (después de filtrar), mostrar mensaje
+  if (availableOwners.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 relative">
+          <div className="text-center">
+            <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No es posible endosar
+            </h3>
+            <p className="text-gray-600 mb-6">
+              No hay destinatarios disponibles para endosar este pagaré.
+            </p>
+            <Button2
+              type="button"
+              onClick={onClose}
+              variant="secondary"
+              className="w-full"
+            >
+              Entendido
+            </Button2>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +135,7 @@ export const EndorseModal: React.FC<EndorseModalProps> = ({
               required
             >
               <option value="">Seleccione un propietario</option>
-              {owners.map((owner) => (
+              {availableOwners.map((owner) => (
                 <option key={owner.id} value={owner.id}>
                   {owner.name}
                 </option>
