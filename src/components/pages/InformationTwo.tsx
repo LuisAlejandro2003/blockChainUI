@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ShieldCheck, BrainCircuit, Network, ArrowRight, Wallet, CheckCircle2 } from 'lucide-react';
 
 const InformationTwo: React.FC = () => {
-  const [proceedToVerification, setProceedToVerification] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
 

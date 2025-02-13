@@ -3,7 +3,7 @@ import { Search, Copy, CheckCircle2 } from 'lucide-react';
 import { getDataFromDB } from '../services/indexedDBService';
 
 const Navbar: React.FC = () => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   const [publicKey, setPublicKey] = useState<string>('');
   const [isCopied, setIsCopied] = useState(false);
 
@@ -28,9 +28,7 @@ const Navbar: React.FC = () => {
     fetchPublicKey();
   }, []);
 
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
-  };
+
 
   const handleCopy = async () => {
     if (!publicKey) {

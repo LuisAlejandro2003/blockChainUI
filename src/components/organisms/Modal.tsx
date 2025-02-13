@@ -1,10 +1,33 @@
 import React from "react";
-import { X, FileText } from "lucide-react";
+import { X, FileText, History, Clock } from "lucide-react";
+
+interface PagareDetail {
+  Record: {
+    BuenoPor: string;
+    Plazo: string;
+    DesPlazo: string;
+    TasaInteres: string;
+    TasaInteresMoratorio: string;
+    LugarDesembolso: string;
+    FechaDesembolso: string;
+    FechaVigencia: string;
+    FechaPrimerPago: string;
+    NumeroCredito: string;
+    CodigoCliente: string;
+    HashDocumento: string;
+    Owner: string;
+    Estatus: string;
+  };
+  txId: string;
+  timestamp: string;
+  isDelete: boolean;
+}
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  data: any;
+  data: PagareDetail | null;
+  history: PagareDetail[];
   fondeador: string;
   setFondeador: (value: string) => void;
 }
@@ -12,9 +35,12 @@ interface ModalProps {
 const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
-  data
+  data,
+  history = []
 }) => {
   if (!isOpen || !data) return null;
+
+  const currentState = data;
 
   const fieldLabels: { [key: string]: string } = {
     txId: "ID de Transacción",
@@ -34,7 +60,7 @@ const Modal: React.FC<ModalProps> = ({
     Estatus: "Estatus",
   };
 
-  const formatValue = (key: string, value: string | number | undefined) => {
+  const formatValue = (key: string, value: string | number | undefined): string => {
     if (!value || value === "N/A") return "N/A";
 
     if (key === "BuenoPor") {
@@ -49,7 +75,7 @@ const Modal: React.FC<ModalProps> = ({
       return "Alsol Contigo, S.A. de C.V., SOFOM, E.N.R.";
     }
 
-    return value;
+    return String(value);
   };
 
   const handleOutsideClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -57,6 +83,38 @@ const Modal: React.FC<ModalProps> = ({
       onClose();
     }
   };
+
+  const formatDate = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('es-MX', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+      timeZone: 'America/Mexico_City'
+    });
+  };
+
+  const getOperationType = (item: PagareDetail, previousItem?: PagareDetail) => {
+    if (item.isDelete) return { label: "Eliminado", style: "bg-red-50 text-red-700" };
+    
+    if (!previousItem) return { label: "Creado", style: "bg-green-50 text-green-700" };
+    
+    if (item.Record.Owner !== previousItem.Record.Owner) {
+      return { label: "Endosado", style: "bg-purple-50 text-purple-700" };
+    }
+    
+    if (item.Record.Estatus !== previousItem.Record.Estatus) {
+      return { label: "Cambio de Estado", style: "bg-yellow-50 text-yellow-700" };
+    }
+
+    return { label: "Actualizado", style: "bg-blue-50 text-blue-700" };
+  };
+
+
 
   return (
     <div
@@ -92,13 +150,11 @@ const Modal: React.FC<ModalProps> = ({
           <div className="space-y-6">
             {/* Status */}
             <div className="flex items-center justify-between mb-6">
-              <div className="text-sm text-gray-500">Estado</div>
+              <div className="text-sm text-gray-500">Estado en Blockchain</div>
               <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                data.Record?.Estatus === "Activo"
-                  ? "bg-green-50 text-green-700" 
-                  : "bg-red-50 text-red-700"
+                !currentState.isDelete ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
               }`}>
-                {data.Record?.Estatus || "N/A"}
+                {currentState.isDelete ? "Eliminado" : "Activo"}
               </div>
             </div>
 
@@ -107,13 +163,13 @@ const Modal: React.FC<ModalProps> = ({
               <div>
                 <div className="text-sm text-gray-500 mb-1">{fieldLabels["txId"]}</div>
                 <div className="font-mono text-sm text-gray-900 break-all">
-                  {data.txId}
+                  {currentState.txId}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-gray-500 mb-1">{fieldLabels["Owner"]}</div>
                 <div className="text-sm text-gray-900">
-                  {formatValue("Owner", data.Record?.Owner)}
+                  {formatValue("Owner", currentState.Record?.Owner)}
                 </div>
               </div>
             </div>
@@ -132,7 +188,7 @@ const Modal: React.FC<ModalProps> = ({
                       {label}
                     </div>
                     <div className="text-sm text-gray-900 font-medium">
-                      {formatValue(key, data.Record?.[key])}
+                      {formatValue(key, currentState.Record?.[key as keyof typeof currentState.Record])}
                     </div>
                   </div>
                 );
@@ -145,7 +201,59 @@ const Modal: React.FC<ModalProps> = ({
                 {fieldLabels["HashDocumento"]}
               </div>
               <div className="font-mono text-sm text-gray-900 break-all">
-                {formatValue("HashDocumento", data.Record?.HashDocumento)}
+                {formatValue("HashDocumento", currentState.Record?.HashDocumento)}
+              </div>
+            </div>
+
+            {/* Historial de Cambios */}
+            <div className="mt-8">
+              <div className="flex items-center gap-2 mb-4">
+                <History className="w-5 h-5 text-yellow-500" />
+                <h3 className="text-lg font-medium text-gray-900">Historial de Cambios</h3>
+              </div>
+              <div className="space-y-4">
+                {history.map((item, index) => {
+                  const previousItem = history[index + 1];
+                  const operationType = getOperationType(item, previousItem);
+                  
+                  return (
+                    <div key={item.txId} className="border border-gray-200 rounded-lg p-4">
+                      {/* Encabezado del historial */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-600">
+                            {formatDate(item.timestamp)}
+                          </span>
+                        </div>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${operationType.style}`}>
+                          {operationType.label}
+                        </span>
+                      </div>
+
+                      {/* ID de Transacción */}
+                      <div className="mb-3">
+                        <div className="text-sm text-gray-500">ID de Transacción:</div>
+                        <div className="text-sm font-mono text-gray-900">{item.txId}</div>
+                      </div>
+
+                      {/* Pagar a la orden de */}
+                      <div className="mb-3">
+                        <div className="text-sm text-gray-500">Pagar a la orden de:</div>
+                        <div className="text-sm text-gray-900">
+                          {formatValue("Owner", item.Record.Owner)}
+                        </div>
+                      </div>
+
+                      {/* Estado de eliminación */}
+                      {item.isDelete && (
+                        <div className="text-sm text-red-600 font-medium">
+                          Registro eliminado
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

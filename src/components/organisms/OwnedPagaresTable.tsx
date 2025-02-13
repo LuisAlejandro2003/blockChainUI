@@ -32,6 +32,7 @@ const OwnedPagaresTable: React.FC = () => {
   const [data, setData] = useState<any[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState<PagareDetail | null>(null);
+  const [selectedHistory, setSelectedHistory] = useState<PagareDetail[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fondeador, setFondeador] = useState("Ninguno");
@@ -82,10 +83,15 @@ const OwnedPagaresTable: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const detail = await fetchPagareDetails(id);
+      const details = await fetchPagareDetails(id);
       if (isSubscribed) {
-        console.log("Detalles del pagaré:", detail);
-        setSelectedDetail(detail);
+        console.log("Detalles del pagaré:", details);
+        // Ordenamos por fecha más reciente primero
+        const sortedDetails = [...details].sort((a, b) => 
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+        setSelectedDetail(sortedDetails[0]); // Estado más reciente
+        setSelectedHistory(sortedDetails); // Todo el historial ordenado
         setModalOpen(true);
       }
     } catch (err: any) {
@@ -126,6 +132,7 @@ const OwnedPagaresTable: React.FC = () => {
   const closeModal = () => {
     setModalOpen(false);
     setSelectedDetail(null);
+    setSelectedHistory([]);
     setFondeador("Ninguno");
   };
 
@@ -326,6 +333,7 @@ const OwnedPagaresTable: React.FC = () => {
         isOpen={modalOpen}
         onClose={closeModal}
         data={selectedDetail}
+        history={selectedHistory}
         fondeador={fondeador}
         setFondeador={setFondeador}
       />

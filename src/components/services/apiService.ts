@@ -196,11 +196,8 @@ export const fetchPagareDetails = async (id: string) => {
 
     console.log("Respuesta de gethistoryone:", response.data);
 
-    if (Array.isArray(response.data) && response.data.length > 0) {
-      return response.data[0];
-    }
-
-    return response.data;
+    // Siempre devolver el array completo
+    return Array.isArray(response.data) ? response.data : [response.data];
   } catch (error: any) {
     console.error("Error en fetchPagareDetails:", error);
     const errorMessage = error.response?.data?.response?.message || 

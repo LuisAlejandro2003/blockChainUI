@@ -36,10 +36,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ seedWords }) => {
     const mnemonic = words.join(' ');
 
     try {
-     await registerUserWithSeed(mnemonic, newPassword, email);
-  
-    
-
+      await registerUserWithSeed(mnemonic, newPassword, email);
       Swal.fire({
         icon: 'success',
         title: 'Registrado',

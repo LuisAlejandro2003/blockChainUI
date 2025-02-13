@@ -4,7 +4,6 @@ import { Loader2, KeyRound, ArrowRight, Copy, Check } from 'lucide-react';
 import { fetchSeedWords } from '../services/apiService';
 
 const AccountCreationPage: React.FC = () => {
-  const [step, setStep] = useState(1);
   const [seedWords, setSeedWords] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCopied, setIsCopied] = useState(false);

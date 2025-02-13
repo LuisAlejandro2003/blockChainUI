@@ -21,7 +21,9 @@ const TableRow: React.FC<TableRowProps> = ({ noPagare, fecha, ubicacion, estatus
         {estatus}
       </td>
       <td className="px-4 py-3">
-        <Button label="Detalles" onClick={onClickDetalles} className="border-orange-300 text-orange-500" />
+        <Button onClick={onClickDetalles} className="border-orange-300 text-orange-500">
+          Detalles
+        </Button>
       </td>
     </tr>
   );

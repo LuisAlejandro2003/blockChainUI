@@ -1,11 +1,10 @@
 import React from 'react';
 import LoginForm from '../molecules/LoginForm';
-import image from '../../assets/images/imageLogin.png';
+import image from '../../assets/images/blockchain.jpg';
 
 const LoginContent: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-orange-50 to-white">
-      {/* Left side with image */}
       <div className="hidden lg:flex lg:w-2/5 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-transparent z-10" />
         <img

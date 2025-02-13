@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
 import { Shield, Key, AlertTriangle, ArrowRight, Brain, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 function InformationOne() {
-  const [showAccountCreation, setShowAccountCreation] = useState(false);
   const navigate = useNavigate();
 
   const features = [
